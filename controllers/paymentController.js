@@ -7,24 +7,26 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 // Create PaymentIntent
 const initiatePayment = async (req, res) => {
     try {
-        const { bookingId, amount, userId } = req.body;
+        // ফ্রন্টএন্ড থেকে আসা সব ডাটা ধরে রাখছি
+        const paymentData = { ...req.body };
 
+        const { amount, bookingId, userId } = paymentData;
+
+        // Stripe PaymentIntent তৈরি করা
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount / 100, // store in dollars, not cents
+            amount: amount, // cents
             currency: "usd",
             metadata: { bookingId, userId },
             automatic_payment_methods: { enabled: true },
         });
 
-        const payment = new Payment({
-            bookingId,
-            userId,
-            amount,
+        // MongoDB তে Payment record তৈরি
+        const payment = await Payment.create({
+            ...paymentData,              // ক্লায়েন্ট থেকে যেকোনো ফিল্ড
             provider: "stripe",
             status: "pending",
             providerPaymentId: paymentIntent.id,
         });
-        await payment.save();
 
         res.json({
             clientSecret: paymentIntent.client_secret,
@@ -39,32 +41,37 @@ const initiatePayment = async (req, res) => {
 // Confirm Payment (frontend already confirmed)
 const confirmPayment = async (req, res) => {
     try {
-        const { transactionId, bookingId, sessionId, sessionTitle } = req.body;
-       
-        // Retrieve PaymentIntent from Stripe (no confirm!)
+        // ক্লায়েন্ট থেকে আসা সব ডাটা ধরে রাখছি
+        const paymentData = { ...req.body };
+
+        const { transactionId, amount } = paymentData;
+
+        console.log(paymentData)
+
+        // Stripe থেকে PaymentIntent রিট্রিভ করা
         const paymentIntent = await stripe.paymentIntents.retrieve(transactionId);
 
         if (!paymentIntent || paymentIntent.status !== "succeeded") {
             return res.status(400).json({ error: "Payment not successful yet" });
         }
 
-        // Update existing payment record
+        // Payment DB আপডেট করা (ডাইনামিক ডাটা দিয়ে)
         let payment = await Payment.findOneAndUpdate(
             { providerPaymentId: transactionId },
-            { status: "paid", updatedAt: new Date() },
+            {
+                ...paymentData,         
+                status: "paid",
+                updatedAt: new Date(),
+            },
             { new: true }
         );
 
-        // Create payment if not exists
+        // যদি payment না থাকে, তাহলে নতুন ক্রিয়েট
         if (!payment) {
             payment = await Payment.create({
-                bookingId,
-                sessionId,
-                sessionTitle,
-                amount: paymentIntent.amount, // convert cents to USD
-                userId: paymentIntent.metadata.userId || null,
-                provider: "stripe",
+                ...paymentData,
                 status: "paid",
+                provider: "stripe",
                 providerPaymentId: transactionId,
             });
         }
