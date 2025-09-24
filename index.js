@@ -34,7 +34,7 @@ app.get('/', (req, res) => {
 // const userRoutes = require('./routes/userRoutes')
 // app.use('/api/users', userRoutes)
 
-app.use('/auth', authRoutes)
+app.use('/api/auth', authRoutes)
 
 
 // Only use your payment routes
