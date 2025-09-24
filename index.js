@@ -7,6 +7,7 @@ const dotenv = require('dotenv')
 const connectDB = require('./config/db')
 const authRoutes = require('./routes/authRoutes')
 const paymentRoute = require('./routes/paymentRoutes')
+const bookingRoutes = require('./routes/bookingRoutes')
 
 
 // =========================
@@ -35,8 +36,8 @@ app.get('/', (req, res) => {
 // app.use('/api/users', userRoutes)
 
 app.use('/api/auth', authRoutes)
-
-
+app.use('/auth', authRoutes)
+app.use('/api', bookingRoutes)
 // Only use your payment routes
 app.use("/api/payments", paymentRoute);
 
