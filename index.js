@@ -6,8 +6,8 @@ const cors = require('cors')
 const dotenv = require('dotenv')
 const connectDB = require('./config/db')
 const authRoutes = require('./routes/authRoutes')
+const paymentRoute = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
-
 
 
 // =========================
@@ -27,7 +27,7 @@ app.use(express.json()) // Parse incoming JSON requests
 //  Routes
 // =========================
 app.get('/', (req, res) => {
-  res.send('Vibepass server is running...')
+  res.send('Vibepass server is running..')
 })
 
 //  Write here your custom routers
@@ -38,7 +38,8 @@ app.get('/', (req, res) => {
 app.use('/auth', authRoutes)
 app.use('/api', bookingRoutes)
 
-
+// Only use your payment routes
+app.use("/api/payments", paymentRoute);
 
 
 
