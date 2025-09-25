@@ -1,4 +1,19 @@
 const express = require("express");
+<<<<<<< merge-review-ramjan
+const { initiatePayment, confirmPayment } = require("../controllers/paymentController");
+const router = express.Router();
+
+// Create PaymentIntent
+router.post("/", initiatePayment);
+
+// Confirm payment manually from frontend
+router.post("/confirm-payment", confirmPayment);
+
+module.exports = router;
+
+
+
+=======
 const router = express.Router();
 const Stripe = require("stripe");
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
@@ -41,3 +56,4 @@ router.post("/save-payment", async (req, res) => {
 });
 
 module.exports = router;
+>>>>>>> main

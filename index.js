@@ -1,28 +1,54 @@
-const express = require("express");
-const cors = require("cors");
-const dotenv = require("dotenv");
-const { connectDB } = require("./config/db");
 
-dotenv.config();
+// =========================
+// 📦 Import Dependencies
+// =========================
+const express = require('express')
+const cors = require('cors')
+const dotenv = require('dotenv')
 
-const app = express();
-const port = process.env.PORT || 3000;
+// Database + Routes
+const connectDB = require('./config/db')
+const authRoutes = require('./routes/authRoutes')
+const paymentRoute = require('./routes/paymentRoutes')
+const bookingRoutes = require('./routes/bookingRoutes')
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-connectDB();
+// =========================
+// ⚙️ App Configuration
+// =========================
+dotenv.config() // Load environment variables from .env file
+const app = express()
+const port = process.env.PORT || 3000
 
-// Routes
-app.get("/", (req, res) => {
-  res.send("✅ vibepass server is running");
-});
+// =========================
+// 🛠️ Middlewares
+// =========================
+app.use(cors()) // Enable CORS for cross-origin requests
+app.use(express.json()) // Parse incoming JSON requests (application/json)
 
-// Payment Routes
-const paymentRoutes = require("./routes/paymentRoutes");
-app.use("/api", paymentRoutes);
+// =========================
+// 🚏 Routes
+// =========================
 
-// Start Server
+// ✅ Default route (health check)
+app.get('/', (req, res) => {
+  res.send('Vibepass server is running..')
+})
+
+// 🔑 Authentication routes
+app.use('/api/auth', authRoutes)
+
+// 🎟️ Booking routes
+app.use('/api', bookingRoutes)
+
+// 💳 Payment routes
+app.use('/api/payments', paymentRoute)
+
+// =========================
+// 📌 Database + Server Start
+// =========================
+connectDB() // Connect to MongoDB
+
+
 app.listen(port, () => {
-  console.log(`🚀 Server running at http://localhost:${port}`);
-});
+  console.log(`🚀 Server is running at: http://localhost:${port}`)
+})
