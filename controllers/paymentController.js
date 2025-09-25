@@ -76,7 +76,7 @@ const confirmPayment = async (req, res) => {
             });
         }
 
-        res.json({ success: true, message: "Payment confirmed ✅", payment });
+        res.json({ success: true, message: "Payment confirmed ", payment });
     } catch (err) {
         console.error("❌ Confirm payment error:", err);
         res.status(500).json({ error: "Could not confirm payment" });
