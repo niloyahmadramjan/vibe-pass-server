@@ -1,3 +1,4 @@
+
 // =========================
 // 📦 Import Dependencies
 // =========================
@@ -46,6 +47,7 @@ app.use('/api/payments', paymentRoute)
 // 📌 Database + Server Start
 // =========================
 connectDB() // Connect to MongoDB
+
 
 app.listen(port, () => {
   console.log(`🚀 Server is running at: http://localhost:${port}`)
