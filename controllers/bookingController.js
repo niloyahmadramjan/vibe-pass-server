@@ -90,4 +90,28 @@ const bookingData = async (req, res) => {
   }
 }
 
-module.exports = { createBooking, bookingData }
+
+
+
+// Get all bookings for a user by email
+const getUserBookings = async (req, res) => {
+  try {
+    // Get email from query params: ?email=sshapa17@gmail.com
+    const userEmail = req.query.email;
+    if (!userEmail) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const bookings = await Booking.find({ userEmail });
+   
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+
+
+
+module.exports = { createBooking, bookingData, getUserBookings }
