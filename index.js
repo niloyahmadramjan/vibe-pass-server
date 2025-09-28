@@ -1,3 +1,4 @@
+
 // =========================
 // 📦 Import Dependencies
 // =========================
@@ -10,6 +11,8 @@ const connectDB = require('./config/db')
 const authRoutes = require('./routes/authRoutes')
 const paymentRoute = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
+const hallRoutes = require('./routes/hallRoutes')
+const pdfRoutes = require("./routes/pdfRoutes");
 
 // =========================
 // ⚙️ App Configuration
@@ -37,10 +40,17 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes)
 
 // 🎟️ Booking routes
-app.use('/api', bookingRoutes)
+app.use('/api/ticket', bookingRoutes)
 
 // 💳 Payment routes
 app.use('/api/payments', paymentRoute)
+
+// pdf use
+app.use("/api/generate-ticket-pdf", pdfRoutes);
+
+
+// Hall Distribution data 
+app.use('/api/hall-distribution', hallRoutes)
 
 // =========================
 // 📌 Database + Server Start
