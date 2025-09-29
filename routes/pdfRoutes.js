@@ -19,12 +19,24 @@ router.post("/", async (req, res) => {
       screen,
     } = req.body;
 
-    // Generate QR Code
-    const qrDataUrl = await QRCode.toDataURL(
-      JSON.stringify({ transactionId, status })
-    );
+    // ✅ Generate QR Code with ALL ticket info
+    const qrData = {
+      movieTitle,
+      theaterName,
+      showDate,
+      showTime,
+      selectedSeats,
+      totalAmount,
+      transactionId,
+      status,
+      userEmail,
+      userName,
+      screen,
+    };
 
-    // Professional Ticket HTML
+    const qrDataUrl = await QRCode.toDataURL(JSON.stringify(qrData));
+
+    // ✅ Professional Ticket HTML
     const html = `
       <html>
         <head>
@@ -153,7 +165,7 @@ router.post("/", async (req, res) => {
 
             <div class="qr">
               <img src="${qrDataUrl}" width="180" height="180" />
-              <p>Scan QR code at entrance</p>
+              <p>Scan QR code to verify ticket details</p>
             </div>
 
             <div class="footer">
@@ -165,7 +177,7 @@ router.post("/", async (req, res) => {
       </html>
     `;
 
-    // Puppeteer -> PDF
+    // ✅ Puppeteer -> PDF
     const browser = await puppeteer.launch({ args: ["--no-sandbox"] });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
