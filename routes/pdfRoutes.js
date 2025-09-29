@@ -19,60 +19,136 @@ router.post("/", async (req, res) => {
       screen,
     } = req.body;
 
-    // Generate QR code as base64 image
+    // Generate QR Code
     const qrDataUrl = await QRCode.toDataURL(
       JSON.stringify({ transactionId, status })
     );
 
-    // Professional HTML ticket
+    // Professional Ticket HTML
     const html = `
       <html>
         <head>
           <style>
-            body { font-family: 'Arial', sans-serif; margin:0; padding:0; background: #f5f5f5; }
-            .ticket {
-              width: 700px;
-              margin: 50px auto;
-              background: white;
-              border-radius: 15px;
-              padding: 30px;
-              box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              background: #f4f6f9;
+              margin: 0;
+              padding: 20px;
             }
-            .header { text-align: center; color: #CC2027; }
-            .header h1 { margin-bottom: 5px; }
-            .section { margin: 20px 0; }
-            .section h2 { font-size: 18px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; }
-            .details { display: flex; justify-content: space-between; margin-bottom: 5px; }
-            .qr { text-align: center; margin-top: 20px; }
-            .footer { font-size: 12px; color: #666; text-align: center; margin-top: 30px; }
+            .ticket {
+              max-width: 750px;
+              margin: auto;
+              background: #fff;
+              border-radius: 16px;
+              box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+              overflow: hidden;
+              border: 2px solid #CC2027;
+            }
+            .header {
+              background: #CC2027;
+              color: #fff;
+              text-align: center;
+              padding: 20px 30px;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 28px;
+            }
+            .header p {
+              margin: 5px 0 0;
+              font-size: 14px;
+              opacity: 0.9;
+            }
+            .section {
+              padding: 20px 30px;
+              border-bottom: 1px solid #eee;
+            }
+            .section h2 {
+              margin: 0 0 15px;
+              font-size: 18px;
+              color: #CC2027;
+              border-left: 4px solid #CC2027;
+              padding-left: 10px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th {
+              width: 160px;
+              text-align: left;
+              padding: 8px;
+              color: #555;
+              font-weight: 600;
+              background: #fafafa;
+              border-bottom: 1px solid #eee;
+            }
+            td {
+              padding: 8px;
+              font-size: 14px;
+              color: #333;
+              border-bottom: 1px solid #eee;
+            }
+            .badge {
+              display: inline-block;
+              padding: 4px 10px;
+              border-radius: 8px;
+              font-size: 13px;
+              font-weight: bold;
+              color: #fff;
+              background: ${status === "paid" ? "#28a745" : "#dc3545"};
+            }
+            .qr {
+              text-align: center;
+              padding: 25px;
+            }
+            .qr img {
+              border: 6px solid #f4f4f4;
+              border-radius: 12px;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            .qr p {
+              margin-top: 10px;
+              font-size: 13px;
+              color: #444;
+            }
+            .footer {
+              text-align: center;
+              font-size: 12px;
+              color: #666;
+              padding: 15px 20px;
+              background: #fafafa;
+            }
           </style>
         </head>
         <body>
           <div class="ticket">
             <div class="header">
-              <h1>VibePass Ticket</h1>
-              <p>Present at theater entrance</p>
+              <h1>🎟️ VibePass Ticket</h1>
+              <p>Present this ticket at the theater entrance</p>
             </div>
 
             <div class="section">
-              <h2>Show Info</h2>
-              <div class="details"><span>Movie:</span> <span>${movieTitle}</span></div>
-              <div class="details"><span>Theater:</span> <span>${theaterName}</span></div>
-              <div class="details"><span>Screen:</span> <span>${screen}</span></div>
-              <div class="details"><span>Date:</span> <span>${showDate}</span></div>
-              <div class="details"><span>Time:</span> <span>${showTime}</span></div>
-              <div class="details"><span>Seats:</span> <span>${selectedSeats.join(
-                ", "
-              )}</span></div>
+              <h2>Show Information</h2>
+              <table>
+                <tr><th>Movie</th><td>${movieTitle}</td></tr>
+                <tr><th>Theater</th><td>${theaterName}</td></tr>
+                <tr><th>Screen</th><td>${screen || "N/A"}</td></tr>
+                <tr><th>Date</th><td>${showDate}</td></tr>
+                <tr><th>Time</th><td>${showTime}</td></tr>
+                <tr><th>Seats</th><td>${selectedSeats.join(", ")}</td></tr>
+              </table>
             </div>
 
             <div class="section">
-              <h2>Booking Info</h2>
-              <div class="details"><span>Name:</span> <span>${userName}</span></div>
-              <div class="details"><span>Email:</span> <span>${userEmail}</span></div>
-              <div class="details"><span>Transaction ID:</span> <span>${transactionId}</span></div>
-              <div class="details"><span>Status:</span> <span>${status}</span></div>
-              <div class="details"><span>Total Paid:</span> <span>৳${totalAmount}</span></div>
+              <h2>Booking Information</h2>
+              <table>
+                <tr><th>Name</th><td>${userName || "N/A"}</td></tr>
+                <tr><th>Email</th><td>${userEmail}</td></tr>
+                <tr><th>Transaction ID</th><td>${transactionId}</td></tr>
+                <tr><th>Status</th><td><span class="badge">${status}</span></td></tr>
+                <tr><th>Total Paid</th><td style="font-weight:bold; color:#CC2027;">৳${totalAmount}</td></tr>
+              </table>
             </div>
 
             <div class="qr">
@@ -81,14 +157,15 @@ router.post("/", async (req, res) => {
             </div>
 
             <div class="footer">
-              Arrive 30 minutes early. Bring a valid ID matching booking name.
+              ⚠️ Please arrive at least 30 minutes before showtime.<br/>
+              Bring a valid ID matching the booking name.
             </div>
           </div>
         </body>
       </html>
     `;
 
-    // Puppeteer PDF
+    // Puppeteer -> PDF
     const browser = await puppeteer.launch({ args: ["--no-sandbox"] });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
