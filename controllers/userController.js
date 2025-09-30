@@ -1,6 +1,5 @@
 const User = require('../models/user')
-const axios = require('axios')
-
+const bcrypt = require('bcryptjs')
 
 const getUserInfo = async (req, res) => {
   try {
@@ -67,23 +66,39 @@ const updatePreferences = async (req, res) => {
   }
 }
 
-// Change PIN
+
+
+
 const changePin = async (req, res) => {
   try {
     const { oldPin, newPin } = req.body
     const user = await User.findById(req.user.id)
 
-    if (user.pin !== oldPin) {
-      return res.status(400).json({ success: false, message: 'Invalid PIN' })
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' })
     }
 
-    user.pin = newPin
+    // Compare old pin with hashed password
+    const isMatch = await bcrypt.compare(oldPin, user.password)
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Invalid old pin' })
+    }
+
+    // Hash new pin before saving
+    const salt = await bcrypt.genSalt(10)
+    user.password = await bcrypt.hash(newPin, salt)
+
     await user.save()
-    res.json({ success: true, message: 'PIN changed' })
+
+    res.json({ success: true, message: 'Pin changed successfully' })
   } catch (err) {
+    console.error('Error changing pin:', err)
     res.status(500).json({ success: false, error: err.message })
   }
 }
+
 
 // Delete account
 const deleteAccount = async (req, res) => {
@@ -106,21 +121,6 @@ const contactSupport = async (req, res) => {
   }
 }
 
-
-// const uploadProfileImage = async (req, res) => {
-//   try {
-    
-//     const imageUrl = imgbbRes.data.data.url
-
-//     // ✅ Save in MongoDB
-//     await User.findByIdAndUpdate(req.user.id, { image: imageUrl })
-
-//     return res.json({ success: true, imageUrl })
-//   } catch (err) {
-//     console.error('Image upload error:', err.response?.data || err.message)
-//     return res.status(500).json({ error: 'Upload failed' })
-//   }
-// }
 
 const uploadProfileImage = async (req, res) => {
   try {
