@@ -2,6 +2,7 @@ const express = require('express')
 const {
   initiatePayment,
   confirmPayment,
+  getWeeklyRevenue,
 } = require('../controllers/paymentController')
 const Stripe = require('stripe')
 
@@ -13,6 +14,9 @@ router.post('/', initiatePayment)
 
 // Confirm payment manually from frontend
 router.post('/confirm-payment', confirmPayment)
+
+
+router.get("/weekly-revenue", getWeeklyRevenue);
 
 // Create PaymentIntent (Direct Stripe)
 router.post('/create-payment-intent', async (req, res) => {

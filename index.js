@@ -12,7 +12,9 @@ const authRoutes = require('./routes/authRoutes')
 const paymentRoute = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
 const hallRoutes = require('./routes/hallRoutes')
-
+const movieRoutes = require("./routes/movieRoutes");
+const showtimeRoutes = require("./routes/showtimeRoutes");
+const couponRoutes = require("./routes/couponRoutes")
 // =========================
 // ⚙️ App Configuration
 // =========================
@@ -46,8 +48,13 @@ app.use('/api/payments', paymentRoute)
 
 // Hall Distribution data 
 app.use('/api/hall-distribution', hallRoutes)
+// movie routes
+app.use("/api/movies", movieRoutes);
+// show time
+app.use("/api/showtimes", showtimeRoutes);
 
-
+// coupon routes
+app.use("/api/coupons",couponRoutes )
 // =========================
 // 📌 Database + Server Start
 // =========================
@@ -57,3 +64,4 @@ connectDB() // Connect to MongoDB
 app.listen(port, () => {
   console.log(`🚀 Server is running at: http://localhost:${port}`)
 })
+

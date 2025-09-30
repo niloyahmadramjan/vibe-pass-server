@@ -83,9 +83,37 @@ const confirmPayment = async (req, res) => {
     }
 };
 
+const getWeeklyRevenue = async (req, res) => {
+    try {
+        const payments = await Payment.aggregate([
+            {
+                $group: {
+                    _id: { $dayOfWeek: "$createdAt" }, // Day number: 1=Sunday, 2=Monday, ...
+                    total: { $sum: "$amount" }
+                }
+            }
+        ]);
+
+        const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const result = {
+            Sun: 0, Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0
+        };
+
+        payments.forEach(item => {
+            const dayName = weekDays[item._id - 1]; // fix offset
+            if (dayName) {
+                result[dayName] = item.total / 100; // convert cents to dollars if needed
+            }
+        });
+
+        res.json(result);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
+};
 
 
 
 
-
-module.exports = { initiatePayment, confirmPayment };
+module.exports = { initiatePayment, confirmPayment ,getWeeklyRevenue};
