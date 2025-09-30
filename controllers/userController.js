@@ -107,42 +107,48 @@ const contactSupport = async (req, res) => {
 }
 
 
+// const uploadProfileImage = async (req, res) => {
+//   try {
+    
+//     const imageUrl = imgbbRes.data.data.url
+
+//     // ✅ Save in MongoDB
+//     await User.findByIdAndUpdate(req.user.id, { image: imageUrl })
+
+//     return res.json({ success: true, imageUrl })
+//   } catch (err) {
+//     console.error('Image upload error:', err.response?.data || err.message)
+//     return res.status(500).json({ error: 'Upload failed' })
+//   }
+// }
+
 const uploadProfileImage = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No image provided' })
+    const userId = req.user.id // comes from verifyToken middleware
+    const { imageUrl } = req.body
+
+    if (!imageUrl) {
+      return res.status(400).json({ message: 'Image URL is required' })
     }
 
-    // ✅ Validate file
-    if (!req.file.mimetype.startsWith('image/')) {
-      return res.status(400).json({ error: 'Only image files allowed' })
-    }
-    if (req.file.size > 5 * 1024 * 1024) {
-      return res.status(400).json({ error: 'File too large (max 5MB)' })
-    }
-
-    // ✅ Convert to base64
-    const base64Image = req.file.buffer.toString('base64')
-
-    // ✅ Upload to ImgBB
-    const formData = new URLSearchParams()
-    formData.append('image', base64Image)
-
-    const imgbbRes = await axios.post(
-      `https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`,
-      formData,
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    // Update user in DB
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { image: imageUrl },
+      { new: true }
     )
 
-    const imageUrl = imgbbRes.data.data.url
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' })
+    }
 
-    // ✅ Save in MongoDB
-    await User.findByIdAndUpdate(req.user.id, { image: imageUrl })
-
-    return res.json({ success: true, imageUrl })
-  } catch (err) {
-    console.error('Image upload error:', err.response?.data || err.message)
-    return res.status(500).json({ error: 'Upload failed' })
+    res.json({
+      message: 'Profile image updated successfully',
+      imageUrl: updatedUser.image,
+    })
+  } catch (error) {
+    console.error('Error updating profile image:', error)
+    res.status(500).json({ message: 'Server error' })
   }
 }
 
