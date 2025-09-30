@@ -12,6 +12,7 @@ const authRoutes = require('./routes/authRoutes')
 const paymentRoute = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
 const hallRoutes = require('./routes/hallRoutes')
+const userRoutes = require('./routes/useRoutes')
 
 // =========================
 // ⚙️ App Configuration
@@ -46,6 +47,13 @@ app.use('/api/payments', paymentRoute)
 
 // Hall Distribution data 
 app.use('/api/hall-distribution', hallRoutes)
+
+
+// User data modify
+
+app.use("/api/user", userRoutes)
+
+
 
 // =========================
 // 📌 Database + Server Start
