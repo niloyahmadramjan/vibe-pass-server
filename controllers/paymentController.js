@@ -113,7 +113,17 @@ const getWeeklyRevenue = async (req, res) => {
     }
 };
 
+const getAllPaymnetData =async ( req,res)=>{
+
+   try {
+        const payment = await Payment.find();
+        res.status(200).json(payment);
+    } catch (err) {
+        res.status(500).json({ message: "Failed to fetch paymnet" });
+    }
+}
 
 
 
-module.exports = { initiatePayment, confirmPayment ,getWeeklyRevenue};
+
+module.exports = { initiatePayment, confirmPayment, getWeeklyRevenue, getAllPaymnetData };

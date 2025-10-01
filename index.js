@@ -12,8 +12,10 @@ const authRoutes = require('./routes/authRoutes')
 const paymentRoute = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
 const hallRoutes = require('./routes/hallRoutes')
-const userRoutes = require('./routes/useRoutes')
-
+const userRoutes = require('./routes/userRoutes')
+const movieRoutes = require('./routes/movieRoutes')
+const showtimeRoutes = require("./routes/showtimeRoutes")
+const couponRoutes = require("./routes/couponRoutes")
 // =========================
 // ⚙️ App Configuration
 // =========================
