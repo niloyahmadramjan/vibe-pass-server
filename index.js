@@ -12,7 +12,7 @@ const authRoutes = require('./routes/authRoutes')
 const paymentRoute = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
 const hallRoutes = require('./routes/hallRoutes')
-const theaterRoutes = require('./routes/theaters')
+const userRoutes = require('./routes/userRoutes')
 
 // =========================
 // ⚙️ App Configuration
@@ -31,23 +31,29 @@ app.use(express.json()) // Parse incoming JSON requests (application/json)
 // 🚏 Routes
 // =========================
 
-// ✅ Default route (health check)
+// Default route (health check)
 app.get('/', (req, res) => {
   res.send('Vibepass server is running..')
 })
 
-// 🔑 Authentication routes
+// Authentication routes
 app.use('/api/auth', authRoutes)
 
-// 🎟️ Booking routes
+// Booking routes
 app.use('/api/ticket', bookingRoutes)
 
-// 💳 Payment routes
+//  Payment routes
 app.use('/api/payments', paymentRoute)
 
 // Hall Distribution data 
 app.use('/api/hall-distribution', hallRoutes)
-app.use("/api/theaters", theaterRoutes);
+
+
+// User data modify
+
+app.use("/api/user", userRoutes)
+
+
 
 // =========================
 // 📌 Database + Server Start
