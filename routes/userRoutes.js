@@ -24,6 +24,6 @@ router.put('/preferences', verifyToken, updatePreferences)
 router.put('/pin', verifyToken, changePin)
 router.delete('/account', verifyToken, deleteAccount)
 router.post('/support', verifyToken, contactSupport)
-router.put('/image', verifyToken, uploadProfileImage) // no multer
+router.put('/image', verifyToken, uploadProfileImage)
 
 module.exports = router

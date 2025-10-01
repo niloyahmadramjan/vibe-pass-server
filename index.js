@@ -12,10 +12,7 @@ const authRoutes = require('./routes/authRoutes')
 const paymentRoute = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
 const hallRoutes = require('./routes/hallRoutes')
-const movieRoutes = require("./routes/movieRoutes");
-const showtimeRoutes = require("./routes/showtimeRoutes");
-const couponRoutes = require("./routes/couponRoutes")
-const userRoutes = require('./routes/userRoutes')
+const userRoutes = require('./routes/useRoutes')
 
 // =========================
 // ⚙️ App Configuration
@@ -34,7 +31,7 @@ app.use(express.json()) // Parse incoming JSON requests (application/json)
 //  Routes
 // =========================
 
-// ✅ Default route (health check)
+// Default route (health check)
 app.get('/', (req, res) => {
   res.send('Vibepass server is running..')
 })
@@ -42,7 +39,7 @@ app.get('/', (req, res) => {
 // Authentication routes
 app.use('/api/auth', authRoutes)
 
-//  Booking routes
+// 🎟️ Booking routes
 app.use('/api/ticket', bookingRoutes)
 
 //  Payment routes

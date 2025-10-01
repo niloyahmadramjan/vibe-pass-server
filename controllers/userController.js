@@ -1,6 +1,5 @@
 const User = require('../models/user')
-const axios = require('axios')
-
+const bcrypt = require('bcryptjs')
 
 const getUserInfo = async (req, res) => {
   try {
@@ -67,23 +66,39 @@ const updatePreferences = async (req, res) => {
   }
 }
 
-// Change PIN
+
+
+
 const changePin = async (req, res) => {
   try {
     const { oldPin, newPin } = req.body
     const user = await User.findById(req.user.id)
 
-    if (user.pin !== oldPin) {
-      return res.status(400).json({ success: false, message: 'Invalid PIN' })
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' })
     }
 
-    user.pin = newPin
+    // Compare old pin with hashed password
+    const isMatch = await bcrypt.compare(oldPin, user.password)
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Invalid old pin' })
+    }
+
+    // Hash new pin before saving
+    const salt = await bcrypt.genSalt(10)
+    user.password = await bcrypt.hash(newPin, salt)
+
     await user.save()
-    res.json({ success: true, message: 'PIN changed' })
+
+    res.json({ success: true, message: 'Pin changed successfully' })
   } catch (err) {
+    console.error('Error changing pin:', err)
     res.status(500).json({ success: false, error: err.message })
   }
 }
+
 
 // Delete account
 const deleteAccount = async (req, res) => {
@@ -109,40 +124,31 @@ const contactSupport = async (req, res) => {
 
 const uploadProfileImage = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No image provided' })
+    const userId = req.user.id // comes from verifyToken middleware
+    const { imageUrl } = req.body
+
+    if (!imageUrl) {
+      return res.status(400).json({ message: 'Image URL is required' })
     }
 
-    // ✅ Validate file
-    if (!req.file.mimetype.startsWith('image/')) {
-      return res.status(400).json({ error: 'Only image files allowed' })
-    }
-    if (req.file.size > 5 * 1024 * 1024) {
-      return res.status(400).json({ error: 'File too large (max 5MB)' })
-    }
-
-    // ✅ Convert to base64
-    const base64Image = req.file.buffer.toString('base64')
-
-    // ✅ Upload to ImgBB
-    const formData = new URLSearchParams()
-    formData.append('image', base64Image)
-
-    const imgbbRes = await axios.post(
-      `https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`,
-      formData,
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    // Update user in DB
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { image: imageUrl },
+      { new: true }
     )
 
-    const imageUrl = imgbbRes.data.data.url
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' })
+    }
 
-    // ✅ Save in MongoDB
-    await User.findByIdAndUpdate(req.user.id, { image: imageUrl })
-
-    return res.json({ success: true, imageUrl })
-  } catch (err) {
-    console.error('Image upload error:', err.response?.data || err.message)
-    return res.status(500).json({ error: 'Upload failed' })
+    res.json({
+      message: 'Profile image updated successfully',
+      imageUrl: updatedUser.image,
+    })
+  } catch (error) {
+    console.error('Error updating profile image:', error)
+    res.status(500).json({ message: 'Server error' })
   }
 }
 
