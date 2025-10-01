@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true },
     phone: { type: String, unique: true, sparse: true },
     password: { type: String, required: true },
+    role: { type: String, default: 'user' },
     provider: {
       type: String,
       enum: ['local', 'google', 'facebook'],
@@ -50,6 +51,5 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 )
-
 
 module.exports = mongoose.model('User', userSchema)
