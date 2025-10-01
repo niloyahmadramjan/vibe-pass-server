@@ -8,7 +8,8 @@ const connectDB = require('./config/db')
 const authRoutes = require('./routes/authRoutes')
 const paymentRoute = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
-
+const http = require("http")
+const { Server } = require("socket.io")
 
 // =========================
 //  App Configuration
@@ -30,28 +31,45 @@ app.get('/', (req, res) => {
   res.send('Vibepass server is running..')
 })
 
-//  Write here your custom routers
-// Example:
-// const userRoutes = require('./routes/userRoutes')
-// app.use('/api/users', userRoutes)
-
 app.use('/auth', authRoutes)
 app.use('/api', bookingRoutes)
-
-// Only use your payment routes
-app.use("/api/payments", paymentRoute);
-
-
-
-
-
-
+app.use("/api/payments", paymentRoute)
 
 // =========================
-// 📌 Database + Server Start
+//  Socket.io Setup
+// =========================
+const server = http.createServer(app)
+const io = new Server(server, {
+  cors: { origin: "*" },
+})
+app.set("io", io) // Globally access io instance
+
+io.on("connection", (socket) => {
+  console.log("⚡ User connected:", socket.id)
+
+  // Join a room for live seat updates
+  socket.on("joinRoom", ({ room }) => {
+    socket.join(room)
+    console.log(`👉 ${socket.id} joined ${room}`)
+  })
+
+  // Listen for seat booking updates from client
+  socket.on("bookSeats", (bookedSeats) => {
+    console.log("Seats booked:", bookedSeats)
+    // Broadcast to all clients in the room
+    io.emit("updateSeats", bookedSeats)
+  })
+
+  socket.on("disconnect", () => {
+    console.log("❌ User disconnected:", socket.id)
+  })
+})
+
+// =========================
+//  Database + Server Start
 // =========================
 connectDB() // Connect to MongoDB
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`🚀 Server is running at: http://localhost:${port}`)
 })
