@@ -110,7 +110,7 @@ const getUserBookings = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
-
+// get all booking data ...........................................
 const getAllBookings = async (req, res) => {
   try {
     

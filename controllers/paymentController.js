@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const Booking = require('../models/Booking');
 const Payment = require("../models/Payment");
 const Stripe = require("stripe");
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
@@ -7,27 +8,32 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 // Create PaymentIntent
 const initiatePayment = async (req, res) => {
     try {
-        // ফ্রন্টএন্ড থেকে আসা সব ডাটা ধরে রাখছি
+        // Store all incoming data from frontend
         const paymentData = { ...req.body };
+
+        console.log("data:", paymentData);
 
         const { amount, bookingId, userId } = paymentData;
 
-        // Stripe PaymentIntent তৈরি করা
+
+
+        // Create a Stripe PaymentIntent
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount, // cents
+            amount: amount, // amount in cents
             currency: "usd",
-            metadata: { bookingId, userId },
+            metadata: { bookingId, userId }, // attach bookingId and userId for reference
             automatic_payment_methods: { enabled: true },
         });
 
-        // MongoDB তে Payment record তৈরি
+        // Create a Payment record in MongoDB
         const payment = await Payment.create({
-            ...paymentData,              // ক্লায়েন্ট থেকে যেকোনো ফিল্ড
+            ...paymentData, // store any additional fields sent from frontend
             provider: "stripe",
-            status: "pending",
-            providerPaymentId: paymentIntent.id,
+            status: "pending", // default status
+            providerPaymentId: paymentIntent.id, // store Stripe payment intent ID
         });
 
+        // Respond with client secret and payment record
         res.json({
             clientSecret: paymentIntent.client_secret,
             payment,
@@ -38,50 +44,56 @@ const initiatePayment = async (req, res) => {
     }
 };
 
-// Confirm Payment (frontend already confirmed)
+// Confirm Payment (frontend has already confirmed payment)
 const confirmPayment = async (req, res) => {
     try {
-        // ক্লায়েন্ট থেকে আসা সব ডাটা ধরে রাখছি
-        const paymentData = { ...req.body };
-
-        const { transactionId, amount } = paymentData;
-
-        console.log(paymentData)
-
-        // Stripe থেকে PaymentIntent রিট্রিভ করা
+        const { transactionId, bookingId } = req.body;
+        console.log(req.body)
+        // Retrieve PaymentIntent from Stripe using transactionId
         const paymentIntent = await stripe.paymentIntents.retrieve(transactionId);
 
+        // Check if payment was successful
         if (!paymentIntent || paymentIntent.status !== "succeeded") {
             return res.status(400).json({ error: "Payment not successful yet" });
         }
 
-        // Payment DB আপডেট করা (ডাইনামিক ডাটা দিয়ে)
+        // Update payment record in MongoDB
         let payment = await Payment.findOneAndUpdate(
             { providerPaymentId: transactionId },
-            {
-                ...paymentData,         
-                status: "paid",
-                updatedAt: new Date(),
-            },
+            { status: "paid", updatedAt: new Date(), bookingId }, // set status to paid and attach bookingId
             { new: true }
         );
 
-        // যদি payment না থাকে, তাহলে নতুন ক্রিয়েট
+        // Handle case where payment record was not found
         if (!payment) {
-            payment = await Payment.create({
-                ...paymentData,
-                status: "paid",
-                provider: "stripe",
-                providerPaymentId: transactionId,
+            return res.status(404).json({ error: "Payment record not found" });
+        }
+
+        // If bookingId exists, update booking status
+        if (bookingId) {
+            const updatedBooking = await Booking.findByIdAndUpdate(
+                bookingId,
+                { status: "confirmed", paymentStatus: "paid" }, // update booking status
+                { new: true }
+            );
+
+            // Return success response with updated payment and booking
+            return res.json({
+                success: true,
+                message: "Payment confirmed & booking updated",
+                payment,
+                booking: updatedBooking,
             });
         }
 
-        res.json({ success: true, message: "Payment confirmed ", payment });
+        // Return success response if no booking update is required
+        res.json({ success: true, message: "Payment confirmed", payment });
     } catch (err) {
-        console.error("❌ Confirm payment error:", err);
+        console.error("Confirm payment error:", err);
         res.status(500).json({ error: "Could not confirm payment" });
     }
 };
+
 
 const getWeeklyRevenue = async (req, res) => {
     try {
@@ -113,10 +125,10 @@ const getWeeklyRevenue = async (req, res) => {
     }
 };
 
-const getAllPaymnetData =async ( req,res)=>{
+const getAllPaymnetData = async (req, res) => {
 
-   try {
-        const payment = await Payment.find();
+    try {
+        const payment = await Payment.find({ status: "paid" });
         res.status(200).json(payment);
     } catch (err) {
         res.status(500).json({ message: "Failed to fetch paymnet" });

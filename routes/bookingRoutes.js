@@ -6,7 +6,6 @@ router.post('/booking', createBooking);
 router.get('/booking/:id', bookingData)
 // Get bookings for logged-in user
 router.get('/my-bookings', getUserBookings);
-
 router.get("/weekly-bookings", getWeeklyBookings);
 router.get("/",getAllBookings)
 
