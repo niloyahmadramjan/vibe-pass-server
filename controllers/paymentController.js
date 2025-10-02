@@ -11,7 +11,7 @@ const initiatePayment = async (req, res) => {
         // Store all incoming data from frontend
         const paymentData = { ...req.body };
 
-        console.log("data:", paymentData);
+    
 
         const { amount, bookingId, userId } = paymentData;
 
@@ -48,7 +48,7 @@ const initiatePayment = async (req, res) => {
 const confirmPayment = async (req, res) => {
     try {
         const { transactionId, bookingId } = req.body;
-        console.log(req.body)
+   
         // Retrieve PaymentIntent from Stripe using transactionId
         const paymentIntent = await stripe.paymentIntents.retrieve(transactionId);
 
