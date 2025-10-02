@@ -8,6 +8,8 @@ const {
   login,
   forgotPassword,
   resetPassword,
+  getWeeklyUsers,
+  getAllUsers,
 } = require('../controllers/authController.js')
 
 router.post('/send-otp', sendOtp)
@@ -17,5 +19,9 @@ router.post('/social-login', socialLogin)
 router.post('/login', login)
 router.post('/forgot-password', forgotPassword)
 router.post('/reset-password', resetPassword)
+router.get("/weekly-users", getWeeklyUsers);
+// GET all users
+router.get("/", getAllUsers);
+
 
 module.exports = router

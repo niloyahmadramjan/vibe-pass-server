@@ -13,7 +13,9 @@ const paymentRoute = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
 const hallRoutes = require('./routes/hallRoutes')
 const userRoutes = require('./routes/userRoutes')
-
+const movieRoutes = require('./routes/movieRoutes')
+const showtimeRoutes = require("./routes/showtimeRoutes")
+const couponRoutes = require("./routes/couponRoutes")
 // =========================
 // ⚙️ App Configuration
 // =========================
@@ -28,7 +30,7 @@ app.use(cors()) // Enable CORS for cross-origin requests
 app.use(express.json()) // Parse incoming JSON requests (application/json)
 
 // =========================
-// 🚏 Routes
+//  Routes
 // =========================
 
 // Default route (health check)
@@ -39,7 +41,7 @@ app.get('/', (req, res) => {
 // Authentication routes
 app.use('/api/auth', authRoutes)
 
-// Booking routes
+// 🎟️ Booking routes
 app.use('/api/ticket', bookingRoutes)
 
 //  Payment routes
@@ -47,7 +49,13 @@ app.use('/api/payments', paymentRoute)
 
 // Hall Distribution data 
 app.use('/api/hall-distribution', hallRoutes)
+// movie routes
+app.use("/api/movies", movieRoutes);
+// show time
+app.use("/api/showtimes", showtimeRoutes);
 
+// coupon routes
+app.use("/api/coupons",couponRoutes )
 
 // User data modify
 
@@ -64,3 +72,4 @@ connectDB() // Connect to MongoDB
 app.listen(port, () => {
   console.log(`🚀 Server is running at: http://localhost:${port}`)
 })
+
