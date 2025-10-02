@@ -64,7 +64,7 @@ const bookingSchema = new Schema(
     // The unique user ID of the person making the booking.
     userId: {
       type: String,
-      required: true,
+     
       trim: true,
     },
     // The user's name.
