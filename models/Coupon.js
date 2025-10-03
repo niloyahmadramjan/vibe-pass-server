@@ -36,6 +36,11 @@ const couponSchema = new mongoose.Schema({
         type: Boolean,
         default: true,
     },
+    description:{
+        type:String,
+        default:true
+    }
+    
 }, { timestamps: true });
 
 module.exports = mongoose.model("Coupon", couponSchema);

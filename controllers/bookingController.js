@@ -160,13 +160,63 @@ const getWeeklyBookings = async (req, res) => {
 
     res.status(200).json(weeklyBookings);
   } catch (error) {
-    console.error("❌ Error fetching weekly bookings:", error);
+    console.error(" Error fetching weekly bookings:", error);
     res.status(500).json({ error: "Server error" });
   }
 };
 
 
+// Delete booking by ID
+const deleteBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if booking exists
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    // Delete booking
+    await Booking.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Booking deleted successfully" });
+  } catch (error) {
+    console.error(" Error deleting booking:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+// const updateBooking = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const updateData = req.body; // e.g. { status: "confirmed" }
+
+//     // Check if booking exists
+//     const booking = await Booking.findById(id);
+//     if (!booking) {
+//       return res.status(404).json({ error: "Booking not found" });
+//     }
+
+//     // Update booking with new data
+//     const updatedBooking = await Booking.findByIdAndUpdate(
+//       id,
+//       { $set: updateData },
+//       { new: true } // return updated document
+//     );
+
+//     res.status(200).json({
+//       message: "Booking updated successfully",
+//       booking: updatedBooking,
+//     });
+//   } catch (error) {
+//     console.error("❌ Error updating booking:", error);
+//     res.status(500).json({ error: "Server error" });
+//   }
+// };
 
 
 
-module.exports = { createBooking, bookingData, getUserBookings, getWeeklyBookings,getAllBookings }
+
+module.exports = { createBooking, bookingData, getUserBookings, getWeeklyBookings,getAllBookings,deleteBooking }
