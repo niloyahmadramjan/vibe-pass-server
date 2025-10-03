@@ -49,7 +49,7 @@ app.use('/api/hall-distribution', hallRoutes)
 // movie routes
 app.use("/api/movies", movieRoutes);
 // show time
-app.use("/api/showtimes", showtimeRoutes);
+// app.use("/api/showtimes", showtimeRoutes);
 
 // coupon routes
 app.use("/api/coupons",couponRoutes )
@@ -71,3 +71,33 @@ const io = new Server(server, {
   },
 })
 
+// Globally access io instance
+app.set("io", io)
+
+// Socket connection handler
+io.on("connection", (socket) => {
+  console.log("⚡ User connected:", socket.id)
+
+  // Join a specific movie + date + showtime room
+  socket.on("joinRoom", ({ movieId, showDate, showtime }) => {
+    const room = `${movieId}-${showDate}-${showtime}`
+    socket.join(room)
+    console.log(`👉 ${socket.id} joined room: ${room}`)
+  })
+
+  // Handle disconnect
+  socket.on("disconnect", () => {
+    console.log("❌ User disconnected:", socket.id)
+  })
+})
+
+
+// =========================
+// 🗄️ Database + Server Start
+// =========================
+connectDB()
+
+server.listen(port, () => {
+  console.log(`🚀 Server is running at: http://localhost:${port}`)
+  console.log(`🔌 Socket.io ready for real-time connections`)
+})
