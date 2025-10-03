@@ -72,11 +72,21 @@ const bookingSchema = new Schema(
       enum: ['pending', 'confirmed', 'cancelled'],
       default: 'pending',
     },
-    paymentStatus: {
-      type: String,
-      enum: ['unpaid', 'paid', 'refunded'],
-      default: 'unpaid',
-    },
+paymentStatus: {
+  type: String,
+  enum: ['unpaid', 'paid', 'refunded'],
+  default: 'unpaid',
+},
+// ✅ ADD THESE 2 NEW FIELDS BELOW
+expiresAt: {
+  type: Date,
+  required: true,
+  index: true
+},
+transactionId: {
+  type: String,
+  trim: true
+},
   },
   {
     timestamps: true,
@@ -85,6 +95,8 @@ const bookingSchema = new Schema(
 
 // Index for faster queries
 bookingSchema.index({ movieId: 1, showTime: 1, status: 1 })
+// ✅ ADD THIS NEW INDEX
+bookingSchema.index({ expiresAt: 1, paymentStatus: 1 })
 
 const Booking = mongoose.model('Booking', bookingSchema)
 
