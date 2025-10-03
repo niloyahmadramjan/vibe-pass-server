@@ -1,9 +1,27 @@
 const express = require('express');
 const router = express.Router();
-const { createBooking, bookingData, getBookingById} = require('../controllers/bookingController');
+const {
+  createBooking,
+  bookingData,
+  getBookingById,
+  getReservedSeats,
+  updatePaymentStatus,
+  checkBookingExpiry,
+} = require("../controllers/bookingController");
 
-router.post('/booking', createBooking);
+// Create new booking
+router.post('/booking', createBooking)
+
+// Get booking by ID
 router.get('/booking/:id', bookingData)
 router.get("/bookings/:id", getBookingById);
 
-module.exports = router;
+
+// Get reserved seats for a specific movie + showtime
+router.get('/reserved-seats', getReservedSeats)
+// Update payment status
+router.patch('/booking/:id/payment', updatePaymentStatus)
+// Check and update booking expiry
+router.post('/booking/:id/expiry', checkBookingExpiry)
+
+module.exports = router

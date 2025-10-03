@@ -1,8 +1,6 @@
 const Booking = require("../models/Booking");
 
-// This is an example of a backend controller function for creating a booking.
-// It should be used in a Node.js/Express environment with Mongoose for database interaction.
-
+// ✅ Create new booking
 const createBooking = async (req, res) => {
   try {
     const {
@@ -15,14 +13,11 @@ const createBooking = async (req, res) => {
       screen,
       selectedSeats,
       totalAmount,
-      // Updated to match the new frontend data structure.
-      // We now expect 'userId' and 'userName' and no longer 'userPhone'.
       userId,
       userName,
       userEmail,
     } = req.body;
 
-    // Basic validation to ensure required fields are present
     if (
       !movieId ||
       !movieTitle ||
@@ -37,8 +32,6 @@ const createBooking = async (req, res) => {
         .json({ error: "All required fields must be provided" });
     }
 
-    // Create a new booking instance using the data from the request body.
-    // The 'userId' and 'userName' are now correctly passed to the new object.
     const newBooking = new Booking({
       movieId,
       movieTitle,
@@ -52,8 +45,8 @@ const createBooking = async (req, res) => {
       userId,
       userName,
       userEmail,
-      status: "pending", // default
-      paymentStatus: "unpaid", // default
+      status: "pending",
+      paymentStatus: "unpaid",
     });
 
     await newBooking.save();
@@ -68,38 +61,103 @@ const createBooking = async (req, res) => {
   }
 };
 
-// Get booking by ID
+// ✅ Get booking by ID (single route)
 const bookingData = async (req, res) => {
   try {
     const { id } = req.params;
-
     const booking = await Booking.findById(id);
 
-    if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
-    }
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
 
     res.status(200).json(booking);
-  } catch (error) {
-    console.error("❌ Error fetching booking:", error);
-    res.status(500).json({ message: "Server error" });
+  } catch (err) {
+    console.error("❌ Error fetching booking:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
+// ✅ Another get booking by ID (if needed for /bookings/:id)
 const getBookingById = async (req, res) => {
   try {
     const { id } = req.params;
     const booking = await Booking.findById(id);
 
-    if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
-    }
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
 
     res.status(200).json(booking);
-  } catch (error) {
-    console.error("❌ Error fetching booking:", error);
-    res.status(500).json({ message: "Server error" });
+  } catch (err) {
+    console.error("❌ Error fetching booking:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-module.exports = { createBooking, bookingData, getBookingById };
+// ✅ Get reserved seats for a show
+const getReservedSeats = async (req, res) => {
+  try {
+    const { showId } = req.query;
+    if (!showId) return res.status(400).json({ error: "showId is required" });
+
+    const bookings = await Booking.find({ showId });
+    const reservedSeats = bookings.flatMap((b) => b.selectedSeats);
+
+    res.json({ reservedSeats });
+  } catch (err) {
+    console.error("❌ Error fetching reserved seats:", err);
+    res.status(500).json({ error: "Failed to fetch reserved seats" });
+  }
+};
+
+// ✅ Update payment status
+const updatePaymentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentStatus } = req.body;
+
+    const booking = await Booking.findByIdAndUpdate(
+      id,
+      { paymentStatus },
+      { new: true }
+    );
+
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    res.json({ message: "Payment status updated", booking });
+  } catch (err) {
+    console.error("❌ Error updating payment status:", err);
+    res.status(500).json({ error: "Failed to update payment status" });
+  }
+};
+
+// ✅ Check and update booking expiry
+const checkBookingExpiry = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    const bookingTime = new Date(booking.createdAt);
+    const now = new Date();
+    const diffMinutes = (now - bookingTime) / 1000 / 60;
+
+    if (diffMinutes > 15 && booking.paymentStatus === "unpaid") {
+      booking.status = "expired";
+      await booking.save();
+      return res.json({ message: "Booking expired", booking });
+    }
+
+    res.json({ message: "Booking is still valid", booking });
+  } catch (err) {
+    console.error("❌ Error checking booking expiry:", err);
+    res.status(500).json({ error: "Failed to check booking expiry" });
+  }
+};
+
+module.exports = {
+  createBooking,
+  bookingData,
+  getBookingById,
+  getReservedSeats,
+  updatePaymentStatus,
+  checkBookingExpiry,
+};

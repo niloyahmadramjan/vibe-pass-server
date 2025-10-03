@@ -83,18 +83,13 @@ const confirmPayment = async (req, res) => {
 
     const htmlTemplate = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 12px; overflow: hidden;">
-        <!-- Header -->
         <div style="background-color: #cc2027; color: white; padding: 20px; text-align: center;">
           <h1 style="margin: 0;">🎟️ VibePass</h1>
           <p style="margin: 0;">Payment Confirmation</p>
         </div>
-
-        <!-- Body -->
         <div style="padding: 20px; color: #333;">
           <h2>Hi ${userName},</h2>
           <p>✅ Your payment for <b>${sessionTitle}</b> was successful!</p>
-
-          <!-- Ticket Info Table -->
           <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
             <tr>
               <td style="padding: 8px; border: 1px solid #ddd;"><b>Transaction ID</b></td>
@@ -102,7 +97,9 @@ const confirmPayment = async (req, res) => {
             </tr>
             <tr>
               <td style="padding: 8px; border: 1px solid #ddd;"><b>Amount Paid</b></td>
-              <td style="padding: 8px; border: 1px solid #ddd;">৳${amount / 100}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">৳${
+                amount / 100
+              }</td>
             </tr>
             <tr>
               <td style="padding: 8px; border: 1px solid #ddd;"><b>Theater</b></td>
@@ -118,14 +115,15 @@ const confirmPayment = async (req, res) => {
             </tr>
             <tr>
               <td style="padding: 8px; border: 1px solid #ddd;"><b>Seats</b></td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${Array.isArray(selectedSeats) ? selectedSeats.join(", ") : selectedSeats}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${
+                Array.isArray(selectedSeats)
+                  ? selectedSeats.join(", ")
+                  : selectedSeats
+              }</td>
             </tr>
           </table>
-
           <p style="margin-top: 20px;">🎬 Enjoy your show with <b>VibePass</b>!</p>
         </div>
-
-        <!-- Footer -->
         <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 14px; color: #777;">
           © ${new Date().getFullYear()} VibePass. All rights reserved.
         </div>
@@ -150,7 +148,6 @@ const confirmPayment = async (req, res) => {
   }
 };
 
-
 // ✅ Get Payment by ID
 const getPaymentById = async (req, res) => {
   try {
@@ -162,4 +159,39 @@ const getPaymentById = async (req, res) => {
   }
 };
 
-module.exports = { initiatePayment, confirmPayment, getPaymentById };
+// ✅ Get All Payments
+const getAllPaymentData = async (req, res) => {
+  try {
+    const payments = await Payment.find();
+    res.json(payments);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ✅ Get Weekly Revenue
+const getWeeklyRevenue = async (req, res) => {
+  try {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const payments = await Payment.find({
+      status: "paid",
+      updatedAt: { $gte: oneWeekAgo },
+    });
+
+    const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
+
+    res.json({ totalRevenue, count: payments.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = {
+  initiatePayment,
+  confirmPayment,
+  getPaymentById,
+  getAllPaymentData,
+  getWeeklyRevenue,
+};
