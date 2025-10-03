@@ -16,9 +16,6 @@ const createBooking = async (req, res) => {
       screen,
       selectedSeats,
       totalAmount,
-      // Updated to match the new frontend data structure.
-      // We now expect 'userId' and 'userName' and no longer 'userPhone'.
-      userId,
       userName,
       userEmail,
     } = req.body
@@ -48,7 +45,6 @@ const createBooking = async (req, res) => {
       screen,
       selectedSeats,
       totalAmount,
-      userId,
       userName,
       userEmail,
       status: 'pending', // default
