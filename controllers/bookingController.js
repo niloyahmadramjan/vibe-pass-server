@@ -1,9 +1,6 @@
 const Booking = require('../models/Booking')
 
-
-// This is an example of a backend controller function for creating a booking.
-// It should be used in a Node.js/Express environment with Mongoose for database interaction.
-
+// ✅ Create Booking with Real-time Socket Update
 const createBooking = async (req, res) => {
   try {
     const {
@@ -16,28 +13,17 @@ const createBooking = async (req, res) => {
       screen,
       selectedSeats,
       totalAmount,
-      // Updated to match the new frontend data structure.
-      // We now expect 'userId' and 'userName' and no longer 'userPhone'.
       userId,
       userName,
       userEmail,
     } = req.body
 
-    // Basic validation to ensure required fields are present
-    if (
-      !movieId ||
-      !movieTitle ||
-      !showDate ||
-      !showTime ||
-      !selectedSeats ||
-      !totalAmount ||
-      !userEmail
-    ) {
+    // Validation
+    if (!movieId || !movieTitle || !showDate || !showTime || !selectedSeats || !totalAmount || !userEmail) {
       return res.status(400).json({ error: 'All required fields must be provided' })
     }
 
-    // Create a new booking instance using the data from the request body.
-    // The 'userId' and 'userName' are now correctly passed to the new object.
+    // Create new booking
     const newBooking = new Booking({
       movieId,
       movieTitle,
@@ -51,11 +37,74 @@ const createBooking = async (req, res) => {
       userId,
       userName,
       userEmail,
-      status: 'pending', // default
-      paymentStatus: 'unpaid', // default
+      status: 'pending',
+      paymentStatus: 'unpaid',
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+
     })
 
-    await newBooking.save()
+await newBooking.save()
+
+// ✅ ADD THIS ENTIRE BLOCK
+setTimeout(async () => {
+  try {
+    const booking = await Booking.findById(newBooking._id)
+    
+    if (booking && booking.paymentStatus === 'unpaid' && booking.status === 'pending') {
+      booking.status = 'cancelled'
+      await booking.save()
+
+      console.log(`⏰ Booking ${booking._id} auto-cancelled after 10 min`)
+
+      const io = req.app.get("io")
+      const room = `${movieId}-${showDate}-${showTime}`
+      
+      const allBookings = await Booking.find({ 
+        movieId, 
+        showDate: new Date(showDate),
+        showTime,
+        status: { $ne: 'cancelled' } 
+      })
+      
+      const reservedSeats = allBookings.flatMap(b => b.selectedSeats)
+
+      io.to(room).emit("reservedSeatsUpdate", { 
+        movieId,
+        showDate,
+        showTime,
+        reservedSeats 
+      })
+
+      io.to(room).emit("bookingExpired", {
+        bookingId: booking._id,
+        message: "A booking has expired"
+      })
+    }
+  } catch (error) {
+    console.error('Auto-cancel error:', error)
+  }
+}, 10 * 60 * 1000) // 10 minutes
+
+// ✅ Real-time Socket.io Update (existing code continues here)
+const io = req.app.get("io")
+    const room = `${movieId}-${showTime}`
+    
+    // Get all reserved seats for this show
+    const allBookings = await Booking.find({ 
+      movieId, 
+      showTime,
+      status: { $ne: 'cancelled' } 
+    })
+    
+    const reservedSeats = allBookings.flatMap(b => b.selectedSeats)
+
+    // Broadcast updated reserved seats to all users in the room
+    io.to(room).emit("reservedSeatsUpdate", { 
+      movieId,
+      showDate,
+      showTime,
+      reservedSeats 
+    })
 
     res.status(201).json({
       message: 'Booking created successfully',
@@ -67,16 +116,10 @@ const createBooking = async (req, res) => {
   }
 }
 
-
-
-
-
-
-// Get booking by ID
+// ✅ Get Booking by ID
 const bookingData = async (req, res) => {
   try {
     const { id } = req.params
-
     const booking = await Booking.findById(id)
 
     if (!booking) {
