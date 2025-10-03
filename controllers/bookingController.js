@@ -125,6 +125,40 @@ const updatePaymentStatus = async (req, res) => {
   } catch (err) {
     console.error("❌ Error updating payment status:", err);
     res.status(500).json({ error: "Failed to update payment status" });
+// Get weekly bookings (per day)
+const getWeeklyBookings = async (req, res) => {
+  try {
+    // Aggregation: group bookings by day of week
+    const bookings = await Booking.aggregate([
+      {
+        $group: {
+          _id: { $dayOfWeek: "$showDate" }, // Sunday = 1, Monday = 2, ...
+          totalBookings: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Map day numbers to names
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weeklyBookings = {
+      Sun: 0,
+      Mon: 0,
+      Tue: 0,
+      Wed: 0,
+      Thu: 0,
+      Fri: 0,
+      Sat: 0
+    };
+
+    bookings.forEach(item => {
+      const dayIndex = item._id - 1; // $dayOfWeek returns 1–7
+      weeklyBookings[dayNames[dayIndex]] = item.totalBookings;
+    });
+
+    res.status(200).json(weeklyBookings);
+  } catch (error) {
+    console.error(" Error fetching weekly bookings:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -139,6 +173,56 @@ const checkBookingExpiry = async (req, res) => {
     const bookingTime = new Date(booking.createdAt);
     const now = new Date();
     const diffMinutes = (now - bookingTime) / 1000 / 60;
+// Delete booking by ID
+const deleteBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if booking exists
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    // Delete booking
+    await Booking.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Booking deleted successfully" });
+  } catch (error) {
+    console.error(" Error deleting booking:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+// const updateBooking = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const updateData = req.body; // e.g. { status: "confirmed" }
+
+//     // Check if booking exists
+//     const booking = await Booking.findById(id);
+//     if (!booking) {
+//       return res.status(404).json({ error: "Booking not found" });
+//     }
+
+//     // Update booking with new data
+//     const updatedBooking = await Booking.findByIdAndUpdate(
+//       id,
+//       { $set: updateData },
+//       { new: true } // return updated document
+//     );
+
+//     res.status(200).json({
+//       message: "Booking updated successfully",
+//       booking: updatedBooking,
+//     });
+//   } catch (error) {
+//     console.error("❌ Error updating booking:", error);
+//     res.status(500).json({ error: "Server error" });
+//   }
+// };
+
 
     if (diffMinutes > 15 && booking.paymentStatus === "unpaid") {
       booking.status = "expired";
@@ -161,3 +245,4 @@ module.exports = {
   updatePaymentStatus,
   checkBookingExpiry,
 };
+module.exports = { createBooking, bookingData, getUserBookings, getWeeklyBookings,getAllBookings,deleteBooking }

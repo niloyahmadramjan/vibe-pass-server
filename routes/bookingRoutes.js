@@ -8,6 +8,7 @@ const {
   updatePaymentStatus,
   checkBookingExpiry,
 } = require("../controllers/bookingController");
+const { createBooking, bookingData, getUserBookings, getWeeklyBookings, getAllBookings, deleteBooking, getReservedSeats } = require('../controllers/bookingController');
 
 // Create new booking
 router.post('/booking', createBooking)
@@ -15,6 +16,9 @@ router.post('/booking', createBooking)
 // Get booking by ID
 router.get('/booking/:id', bookingData)
 router.get("/bookings/:id", getBookingById);
+
+// delete booking 
+router.delete("/:id", deleteBooking)
 
 
 // Get reserved seats for a specific movie + showtime
