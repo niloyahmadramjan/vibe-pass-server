@@ -1,7 +1,14 @@
-const express = require('express');
-const router = express.Router();
-const { createBooking } = require('../controllers/bookingController');
+const express = require('express')
+const router = express.Router()
+const { createBooking, bookingData, getReservedSeats } = require('../controllers/bookingController')
 
-router.post('/bookings', createBooking);
+// Create new booking
+router.post('/booking', createBooking)
 
-module.exports = router;
+// Get booking by ID
+router.get('/booking/:id', bookingData)
+
+// Get reserved seats for a specific movie + showtime
+router.get('/reserved-seats', getReservedSeats)
+
+module.exports = router

@@ -1,74 +1,88 @@
 // =========================
-//  Import Dependencies
+// 📦 Import Dependencies
 // =========================
 const express = require('express')
 const cors = require('cors')
 const dotenv = require('dotenv')
+const http = require('http')
+const { Server } = require('socket.io')
+
+// Database + Routes
 const connectDB = require('./config/db')
 const authRoutes = require('./routes/authRoutes')
 const paymentRoute = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
-const http = require("http")
-const { Server } = require("socket.io")
+const hallRoutes = require('./routes/hallRoutes')
+const userRoutes = require('./routes/userRoutes')
+const showtimeRoutes = require('./routes/showtimeRoutes')
+const { autoCleanupPastBookings } = require('./controllers/showtimeController')
 
 // =========================
-//  App Configuration
+// ⚙️ App Configuration
 // =========================
-dotenv.config() // Load environment variables from .env file
+dotenv.config()
 const app = express()
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 5000
 
 // =========================
-//  Middlewares
+// 🛠️ Middlewares
 // =========================
-app.use(cors()) // Enable CORS for cross-origin requests
-app.use(express.json()) // Parse incoming JSON requests
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  credentials: true
+}))
+app.use(express.json())
 
 // =========================
-//  Routes
+// 🚏 Routes
 // =========================
 app.get('/', (req, res) => {
   res.send('Vibepass server is running..')
 })
 
-app.use('/auth', authRoutes)
-app.use('/api', bookingRoutes)
-app.use("/api/payments", paymentRoute)
+app.use('/api/auth', authRoutes)
+app.use('/api/ticket', bookingRoutes)
+app.use('/api/payments', paymentRoute)
+app.use('/api/hall-distribution', hallRoutes)
+app.use("/api/user", userRoutes)
+app.use('/api/showtime', showtimeRoutes)
 
 // =========================
-//  Socket.io Setup
+// ✅ Socket.io Setup (Real-time Seat Booking)
 // =========================
 const server = http.createServer(app)
 const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: { 
+    origin: process.env.FRONTEND_URL || "http://localhost:3000", 
+    methods: ["GET", "POST"],
+    credentials: true
+  },
 })
-app.set("io", io) // Globally access io instance
 
+// Globally access io instance
+app.set("io", io)
+
+// Socket connection handler
 io.on("connection", (socket) => {
   console.log("⚡ User connected:", socket.id)
 
-  // Join a room for live seat updates
-  socket.on("joinRoom", ({ room }) => {
+  // Join a specific movie+showtime room
+  socket.on("joinRoom", ({ movieId, showDate, showtime, }) => {
+    const room = `${movieId}-${showDate}-${showtime}`
     socket.join(room)
-    console.log(`👉 ${socket.id} joined ${room}`)
+    console.log(`👉 ${socket.id} joined room: ${room}`)
   })
 
-  // Listen for seat booking updates from client
-  socket.on("bookSeats", (bookedSeats) => {
-    console.log("Seats booked:", bookedSeats)
-    // Broadcast to all clients in the room
-    io.emit("updateSeats", bookedSeats)
-  })
-
+  // Handle disconnect
   socket.on("disconnect", () => {
     console.log("❌ User disconnected:", socket.id)
   })
 })
 
 // =========================
-//  Database + Server Start
+// 🗄️ Database + Server Start
 // =========================
-connectDB() // Connect to MongoDB
+connectDB()
 
 server.listen(port, () => {
   console.log(`🚀 Server is running at: http://localhost:${port}`)

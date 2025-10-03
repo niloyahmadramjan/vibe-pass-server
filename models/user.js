@@ -2,14 +2,54 @@ const mongoose = require('mongoose')
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String },
-    email: { type: String, required: true, unique: true },
-    phone: { type: String }, // শুধুমাত্র email/pass signup এ আসবে
-    password: { type: String }, // local signup এর জন্য
-    provider: { type: String }, // যেমন: "credentials", "google", "github"
-    image: { type: String }, // provider login করলে avatar রাখার জন্য
+    // Basic Info
+    name: { type: String, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true },
+    phone: { type: String, unique: true, sparse: true },
+    password: { type: String, required: true },
+    role: { type: String, default: 'user' },
+    provider: {
+      type: String,
+      enum: ['local', 'google', 'facebook'],
+      default: 'local',
+    },
+    image: {
+      type: String,
+      default: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+    },
+
+    // Extra Profile Info
+    dob: { type: Date },
+    state: { type: String },
+    district: { type: String },
+    pincode: { type: String },
+
+    // Verification
+    emailVerified: { type: Boolean, default: true },
+    phoneVerified: { type: Boolean, default: true },
+
+    // Preferences
+    preferences: {
+      notifications: { type: Boolean, default: true },
+      theme: { type: String, enum: ['light', 'dark'], default: 'light' },
+      language: { type: String, default: 'en' },
+    },
+
+    // Security
+    pin: { type: String },
+    resetToken: { type: String },
+    resetTokenExpiry: { type: Date },
+
+    // Support Messages (if needed)
+    supportRequests: [
+      {
+        message: { type: String },
+        createdAt: { type: Date, default: Date.now },
+        status: { type: String, enum: ['open', 'closed'], default: 'open' },
+      },
+    ],
   },
   { timestamps: true }
 )
 
-module.exports = mongoose.model('users', userSchema)
+module.exports = mongoose.model('User', userSchema)
