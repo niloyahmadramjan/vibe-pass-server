@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createBooking, bookingData, getUserBookings, getWeeklyBookings, getAllBookings} = require('../controllers/bookingController');
+const { createBooking, bookingData, getUserBookings, getWeeklyBookings, getAllBookings, deleteBooking, getReservedSeats } = require('../controllers/bookingController');
 
 // Create new booking
 router.post('/booking', createBooking)
@@ -11,6 +11,9 @@ router.get('/booking/:id', bookingData)
 router.get('/my-bookings', getUserBookings);
 router.get("/weekly-bookings", getWeeklyBookings);
 router.get("/",getAllBookings)
+
+// delete booking 
+router.delete("/:id", deleteBooking)
 
 
 // Get reserved seats for a specific movie + showtime

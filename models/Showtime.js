@@ -21,6 +21,27 @@ const ShowtimeSchema = new mongoose.Schema({
     hall: {
         type: String,
         required: true
+    },
+    language: {
+        type: String,
+        default: "English"
+    },
+    format: {
+        type: String,
+        default: "2D"
+    },
+    totalSeats: {
+        type: Number,
+        default: 100
+    },
+    availableSeats: {
+        type: Number,
+        default: 100
+    },
+    status: {
+        type: String,
+        enum: ["Active", "Cancelled", "Completed"],
+        default: "Active"
     }
 }, { timestamps: true });
 
