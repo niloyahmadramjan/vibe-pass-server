@@ -13,10 +13,9 @@ const authRoutes = require('./routes/authRoutes')
 const paymentRoute = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
 const hallRoutes = require('./routes/hallRoutes')
-const userRoutes = require('./routes/userRoutes')
-const movieRoutes = require('./routes/movieRoutes')
-const showtimeRoutes = require("./routes/showtimeRoutes")
-const couponRoutes = require("./routes/couponRoutes")
+const pdfRoutes = require("./routes/pdfRoutes");
+const userRoutes = require("./routes/userRoutes");
+
 // =========================
 // ⚙️ App Configuration
 // =========================
@@ -45,6 +44,12 @@ app.use('/api/auth', authRoutes)
 // 🎟️ Booking routes
 app.use('/api/ticket', bookingRoutes)
 app.use('/api/payments', paymentRoute)
+
+// pdf use
+app.use("/api/generate-ticket-pdf", pdfRoutes);
+
+
+// Hall Distribution data 
 app.use('/api/hall-distribution', hallRoutes)
 // movie routes
 app.use("/api/movies", movieRoutes);
@@ -62,12 +67,11 @@ app.use('/api/showtime', showtimeRoutes)
 // =========================
 // ✅ Socket.io Setup (Real-time Seat Booking)
 // =========================
-const server = http.createServer(app)
-const io = new Server(server, {
-  cors: { 
-    origin: process.env.FRONTEND_URL || "http://localhost:3000", 
-    methods: ["GET", "POST"],
-    credentials: true
-  },
+connectDB() // Connect to MongoDB
+
+
+// Start Server
+app.listen(port, () => {
+  console.log(`🚀 Server is running at: http://localhost:${port}`)
 })
 

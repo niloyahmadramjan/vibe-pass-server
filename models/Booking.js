@@ -54,7 +54,7 @@ const bookingSchema = new Schema(
     },
     userId: {
       type: String,
-      
+     
       trim: true,
     },
     userName: {
