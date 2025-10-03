@@ -133,110 +133,83 @@ const bookingData = async (req, res) => {
   }
 }
 
-// ✅ Get Reserved Seats for a Movie + Showtime
-// ✅ Get Reserved Seats - ADD showDate parameter
-const getReservedSeats = async (req, res) => {
+
+
+
+// Get all bookings for a user by email
+const getUserBookings = async (req, res) => {
   try {
-    const { movieId, showtime, showDate } = req.query // ✅ showDate added
-
-    if (!movieId || !showtime || !showDate) {
-      return res.status(400).json({ error: 'movieId, showDate, and showtime are required' })
+    // Get email from query params: ?email=sshapa17@gmail.com
+    const userEmail = req.query.email;
+    if (!userEmail) {
+      return res.status(400).json({ error: 'Email is required' });
     }
 
-    const bookings = await Booking.find({
-      movieId,
-      showDate: new Date(showDate), // ✅ Date filter added
-      showTime: showtime,
-      status: { $ne: 'cancelled' }
-    })
-
-    const reservedSeats = bookings.flatMap(booking => booking.selectedSeats)
-
-    res.status(200).json({ reservedSeats })
+    const bookings = await Booking.find({ userEmail });
+   
+    res.status(200).json(bookings);
   } catch (error) {
-    console.error('Error:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
   }
-}
-
-
-
-
-
-
-
-// ✅ ADD THESE 2 NEW FUNCTIONS
-
-const updatePaymentStatus = async (req, res) => {
+};
+// get all booking data ...........................................
+const getAllBookings = async (req, res) => {
   try {
-    const { id } = req.params
-    const { paymentStatus, transactionId } = req.body
+    
+   
+   
+    const bookings = await Booking.find();
 
-    const booking = await Booking.findById(id)
-
-    if (!booking) {
-      return res.status(404).json({ error: 'Booking not found' })
-    }
-
-    if (booking.status === 'cancelled') {
-      return res.status(400).json({ error: 'Booking has been cancelled' })
-    }
-
-    if (new Date() > booking.expiresAt && booking.paymentStatus === 'unpaid') {
-      booking.status = 'cancelled'
-      await booking.save()
-      return res.status(400).json({ error: 'Booking has expired' })
-    }
-
-    booking.paymentStatus = paymentStatus
-    if (paymentStatus === 'paid') {
-      booking.status = 'confirmed'
-      booking.transactionId = transactionId
-    }
-
-    await booking.save()
-
-    res.status(200).json({
-      message: 'Payment updated successfully',
-      booking
-    })
+    res.status(200).json(bookings);
   } catch (error) {
-    console.error('Error:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
   }
-}
+};
 
-const checkBookingExpiry = async (req, res) => {
+
+
+
+// Get weekly bookings (per day)
+const getWeeklyBookings = async (req, res) => {
   try {
-    const { id } = req.params
+    // Aggregation: group bookings by day of week
+    const bookings = await Booking.aggregate([
+      {
+        $group: {
+          _id: { $dayOfWeek: "$showDate" }, // Sunday = 1, Monday = 2, ...
+          totalBookings: { $sum: 1 }
+        }
+      }
+    ]);
 
-    const booking = await Booking.findById(id)
+    // Map day numbers to names
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weeklyBookings = {
+      Sun: 0,
+      Mon: 0,
+      Tue: 0,
+      Wed: 0,
+      Thu: 0,
+      Fri: 0,
+      Sat: 0
+    };
 
-    if (!booking) {
-      return res.status(404).json({ error: 'Booking not found' })
-    }
+    bookings.forEach(item => {
+      const dayIndex = item._id - 1; // $dayOfWeek returns 1–7
+      weeklyBookings[dayNames[dayIndex]] = item.totalBookings;
+    });
 
-    const now = new Date()
-    const isExpired = now > booking.expiresAt && booking.paymentStatus === 'unpaid'
-
-    if (isExpired && booking.status !== 'cancelled') {
-      booking.status = 'cancelled'
-      await booking.save()
-    }
-
-    const timeRemaining = Math.max(0, Math.floor((booking.expiresAt - now) / 1000))
-
-    res.status(200).json({
-      booking,
-      isExpired,
-      timeRemaining
-    })
+    res.status(200).json(weeklyBookings);
   } catch (error) {
-    console.error('Error:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    console.error("❌ Error fetching weekly bookings:", error);
+    res.status(500).json({ error: "Server error" });
   }
-}
+};
 
 
 
-module.exports = { createBooking, bookingData, getReservedSeats, updatePaymentStatus, checkBookingExpiry }
+
+
+module.exports = { createBooking, bookingData, getUserBookings, getWeeklyBookings,getAllBookings }

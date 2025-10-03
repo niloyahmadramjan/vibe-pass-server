@@ -1,14 +1,15 @@
-const express = require('express')
-const router = express.Router()
-const { 
-  getAvailableShowtimes,
-  deletePastBookings
-} = require('../controllers/showtimeController')
+const express = require("express");
+const router = express.Router();
+const { addShowtime, getShowtimes, updateShowtime, deleteShowtime } = require("../controllers/showtimeController");
 
-// Get available showtimes with real seat count
-router.get('/available-showtimes', getAvailableShowtimes)
+// Add a new showtime
+router.post("/add", addShowtime);
 
-// Manually trigger cleanup of past bookings (admin only)
-router.delete('/cleanup-past-bookings', deletePastBookings)
+// Get all showtimes
+router.get("/", getShowtimes);
+// updatate Showtime
+router.put("/:id", updateShowtime);
+// delete showtime
+router.delete("/:id", deleteShowtime);
 
-module.exports = router
+module.exports = router;

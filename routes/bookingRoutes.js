@@ -1,12 +1,17 @@
-const express = require('express')
-const router = express.Router()
-const { createBooking, bookingData, getReservedSeats, updatePaymentStatus, checkBookingExpiry } = require('../controllers/bookingController')
+const express = require('express');
+const router = express.Router();
+const { createBooking, bookingData, getUserBookings, getWeeklyBookings, getAllBookings} = require('../controllers/bookingController');
 
 // Create new booking
 router.post('/booking', createBooking)
 
 // Get booking by ID
 router.get('/booking/:id', bookingData)
+// Get bookings for logged-in user
+router.get('/my-bookings', getUserBookings);
+router.get("/weekly-bookings", getWeeklyBookings);
+router.get("/",getAllBookings)
+
 
 // Get reserved seats for a specific movie + showtime
 router.get('/reserved-seats', getReservedSeats)

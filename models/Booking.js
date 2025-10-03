@@ -54,6 +54,7 @@ const bookingSchema = new Schema(
     },
     userId: {
       type: String,
+      
       trim: true,
     },
     userName: {
@@ -100,4 +101,5 @@ bookingSchema.index({ expiresAt: 1, paymentStatus: 1 })
 
 const Booking = mongoose.model('Booking', bookingSchema)
 
+// Export the model for use in other files.
 module.exports = Booking
