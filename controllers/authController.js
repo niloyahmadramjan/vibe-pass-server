@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const users = require('../models/user.js')
 const sendEmail = require('../utils/sendEmail.js')
+const user = require('../models/user.js')
 
 // Temporary in-memory OTP store (better to use Redis/DB in production)
 let otpStore = {}
@@ -198,6 +199,76 @@ const resetPassword = async (req, res) => {
   }
 }
 
+
+
+
+// Weekly Active Users
+const getWeeklyUsers = async (req, res) => {
+  try {
+    const user = await users.aggregate([
+      {
+        $group: {
+          _id: { $dayOfWeek: "$createdAt" },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const result = {
+      Sun: 0, Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0
+    };
+
+  user.forEach(item => {
+      const dayName = weekDays[item._id - 1];
+      if (dayName) {
+        result[dayName] = item.count;
+      }
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// get all users...................................................
+
+const getAllUsers = async (req, res) => {
+  try {
+    const allUsers = await user.find().select("-password"); // use model, not variable
+    if (!allUsers || allUsers.length === 0) {
+      return res.status(404).json({ message: "No users found" });
+    }
+    res.status(200).json(allUsers);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// Delete user by ID
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user exists
+    const user = await users.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Delete user
+    await users.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting user:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 // Export functions
 module.exports = {
   sendOtp,
@@ -207,4 +278,8 @@ module.exports = {
   login,
   forgotPassword,
   resetPassword, 
+  getWeeklyUsers,
+  getAllUsers,
+  deleteUser,
+ 
 }

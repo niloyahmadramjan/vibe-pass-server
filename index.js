@@ -1,66 +1,93 @@
-
 // =========================
-// 📦 Import Dependencies
+// Import Dependencies
 // =========================
 const express = require('express')
 const cors = require('cors')
 const dotenv = require('dotenv')
+const http = require('http')
+const { Server } = require('socket.io')
 
-// Database + Routes
+// =========================
+//  Import Custom Modules
+// =========================
 const connectDB = require('./config/db')
+
+//  Routes
 const authRoutes = require('./routes/authRoutes')
-const paymentRoute = require('./routes/paymentRoutes')
+const paymentRoutes = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
 const hallRoutes = require('./routes/hallRoutes')
+const pdfRoutes = require('./routes/pdfRoutes')
 const userRoutes = require('./routes/userRoutes')
+const movieRoutes = require('./routes/movieRoutes')
+const showtimeRoutes = require('./routes/showtimeRoutes')
+const couponRoutes = require('./routes/couponRoutes')
 
 // =========================
-// ⚙️ App Configuration
+//  App Configuration
 // =========================
-dotenv.config() // Load environment variables from .env file
+dotenv.config()
 const app = express()
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 5000
 
 // =========================
-// 🛠️ Middlewares
+//  Middlewares
 // =========================
-app.use(cors()) // Enable CORS for cross-origin requests
-app.use(express.json()) // Parse incoming JSON requests (application/json)
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  })
+)
+
+app.use(express.json())
 
 // =========================
-// 🚏 Routes
+// 🌐 Base Route
 // =========================
-
-// Default route (health check)
 app.get('/', (req, res) => {
-  res.send('Vibepass server is running..')
+  res.send(' VibePass Server is running smoothly...')
 })
 
-// Authentication routes
+// =========================
+//  API Routes
+// =========================
+
+//  Auth
 app.use('/api/auth', authRoutes)
 
-// Booking routes
+//  Booking
 app.use('/api/ticket', bookingRoutes)
 
-//  Payment routes
-app.use('/api/payments', paymentRoute)
+//  Payments
+app.use('/api/payments', paymentRoutes)
 
-// Hall Distribution data 
+//  PDF Generation
+app.use('/api/generate-ticket-pdf', pdfRoutes)
+
+//  Hall Distribution
 app.use('/api/hall-distribution', hallRoutes)
 
+//  Movies
+app.use('/api/movies', movieRoutes)
 
-// User data modify
+//  Showtimes
+app.use('/api/showtime', showtimeRoutes)
 
-app.use("/api/user", userRoutes)
+//  Coupons
+app.use('/api/coupons', couponRoutes)
 
-
+//  User (CRUD Operations)
+app.use('/api/user', userRoutes)
 
 // =========================
-// 📌 Database + Server Start
+//  Database Connection
 // =========================
-connectDB() // Connect to MongoDB
+connectDB()
 
-
+// =========================
+//  Start Server
+// =========================
 app.listen(port, () => {
-  console.log(`🚀 Server is running at: http://localhost:${port}`)
+  console.log(`✅ Server is running at: http://localhost:${port}`)
 })
