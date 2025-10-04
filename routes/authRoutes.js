@@ -10,6 +10,7 @@ const {
   resetPassword,
   getWeeklyUsers,
   getAllUsers,
+  deleteUser,
 } = require('../controllers/authController.js')
 
 router.post('/send-otp', sendOtp)
@@ -22,6 +23,7 @@ router.post('/reset-password', resetPassword)
 router.get("/weekly-users", getWeeklyUsers);
 // GET all users
 router.get("/", getAllUsers);
+router.delete("/:id", deleteUser)
 
 
 module.exports = router

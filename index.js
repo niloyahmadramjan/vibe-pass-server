@@ -7,16 +7,22 @@ const dotenv = require('dotenv')
 const http = require('http')
 const { Server } = require('socket.io')
 
-// Database + Routes
+// =========================
+// 🧩 Import Custom Modules
+// =========================
 const connectDB = require('./config/db')
+
+// 🛣️ Import Routes
 const authRoutes = require('./routes/authRoutes')
-const paymentRoute = require('./routes/paymentRoutes')
+const paymentRoutes = require('./routes/paymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
 const hallRoutes = require('./routes/hallRoutes')
+const pdfRoutes = require('./routes/pdfRoutes')
 const userRoutes = require('./routes/userRoutes')
 const movieRoutes = require('./routes/movieRoutes')
-const showtimeRoutes = require("./routes/showtimeRoutes")
-const couponRoutes = require("./routes/couponRoutes")
+const showtimeRoutes = require('./routes/showtimeRoutes')
+const couponRoutes = require('./routes/couponRoutes')
+
 // =========================
 // ⚙️ App Configuration
 // =========================
@@ -24,73 +30,87 @@ dotenv.config()
 const app = express()
 const port = process.env.PORT || 5000
 
-// =========================
-// 🛠️ Middlewares
-// =========================
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  credentials: true
-}))
-app.use(express.json())
-
-// =========================
-//  Routes
-// =========================
-app.get('/', (req, res) => {
-  res.send('Vibepass server is running..')
-})
-
-app.use('/api/auth', authRoutes)
-
-// 🎟️ Booking routes
-app.use('/api/ticket', bookingRoutes)
-app.use('/api/payments', paymentRoute)
-app.use('/api/hall-distribution', hallRoutes)
-// movie routes
-app.use("/api/movies", movieRoutes);
-// show time
-// app.use("/api/showtimes", showtimeRoutes);
-
-// coupon routes
-app.use("/api/coupons",couponRoutes )
-
-// User data modify
-
-app.use("/api/user", userRoutes)
-app.use('/api/showtime', showtimeRoutes)
-
-// =========================
-// ✅ Socket.io Setup (Real-time Seat Booking)
-// =========================
+// Create HTTP server for Socket.io
 const server = http.createServer(app)
+
+// =========================
+// ⚡ Socket.io Setup
+// =========================
 const io = new Server(server, {
-  cors: { 
-    origin: process.env.FRONTEND_URL || "http://localhost:3000", 
-    methods: ["GET", "POST"],
-    credentials: true
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
   },
 })
 
-// Globally access io instance
-app.set("io", io)
+// Make io globally accessible
+app.set('io', io)
 
-// Socket connection handler
-io.on("connection", (socket) => {
-  console.log("⚡ User connected:", socket.id)
+// Handle Socket.io events
+io.on('connection', (socket) => {
+  console.log('⚡ User connected:', socket.id)
 
   // Join a specific movie + date + showtime room
-  socket.on("joinRoom", ({ movieId, showDate, showtime }) => {
+  socket.on('joinRoom', ({ movieId, showDate, showtime }) => {
     const room = `${movieId}-${showDate}-${showtime}`
     socket.join(room)
     console.log(`👉 ${socket.id} joined room: ${room}`)
   })
 
   // Handle disconnect
-  socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id)
+  socket.on('disconnect', () => {
+    console.log('❌ User disconnected:', socket.id)
   })
 })
 
+// =========================
+// 🧱 Middleware
+// =========================
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  })
+)
+app.use(express.json())
+
+// =========================
+// 🌐 Base Route
+// =========================
+app.get('/', (req, res) => {
+  res.send('🚀 VibePass Server is running smoothly...')
+})
+
+// =========================
+// 🧭 API Routes
+// =========================
+
+// Auth
+app.use('/api/auth', authRoutes)
+
+// Booking
+app.use('/api/ticket', bookingRoutes)
+
+// Payments
+app.use('/api/payments', paymentRoutes)
+
+// PDF Generation
+app.use('/api/generate-ticket-pdf', pdfRoutes)
+
+// Hall Distribution
+app.use('/api/hall-distribution', hallRoutes)
+
+// Movies
+app.use('/api/movies', movieRoutes)
+
+// Showtimes
+app.use('/api/showtime', showtimeRoutes)
+
+// Coupons
+app.use('/api/coupons', couponRoutes)
+
+// User (CRUD Operations)
+app.use('/api/user', userRoutes)
 
 // =========================
 // 🗄️ Database + Server Start
@@ -98,6 +118,6 @@ io.on("connection", (socket) => {
 connectDB()
 
 server.listen(port, () => {
-  console.log(`🚀 Server is running at: http://localhost:${port}`)
-  console.log(`🔌 Socket.io ready for real-time connections`)
+  console.log(`✅ Express server running at: http://localhost:${port}`)
+  console.log('🔌 Socket.io ready for real-time connections')
 })

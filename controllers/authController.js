@@ -233,7 +233,7 @@ const getWeeklyUsers = async (req, res) => {
   }
 };
 
-
+// get all users...................................................
 
 const getAllUsers = async (req, res) => {
   try {
@@ -244,6 +244,27 @@ const getAllUsers = async (req, res) => {
     res.status(200).json(allUsers);
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// Delete user by ID
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user exists
+    const user = await users.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Delete user
+    await users.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting user:", error);
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -259,5 +280,6 @@ module.exports = {
   resetPassword, 
   getWeeklyUsers,
   getAllUsers,
+  deleteUser,
  
 }
