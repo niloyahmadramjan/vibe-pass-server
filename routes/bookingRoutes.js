@@ -1,34 +1,58 @@
-const express = require('express');
-const router = express.Router();
+// =========================
+// 🎟️ Booking Routes
+// =========================
+const express = require('express')
+const router = express.Router()
+
+// =========================
+// 📦 Import Controllers
+// =========================
 const {
   createBooking,
   bookingData,
   getBookingById,
   getUserBookings,
+  getWeeklyBookings,
+  getAllBookings,
   getReservedSeats,
   updatePaymentStatus,
   checkBookingExpiry,
-  getWeeklyBookings,
-  getAllBookings,
   deleteBooking,
 } = require('../controllers/bookingController')
 
-// Create new booking
+// =========================
+// 🧭 Route Definitions
+// =========================
+
+// 🆕 Create new booking
 router.post('/booking', createBooking)
 
-// Get booking by ID
+// 🔍 Get booking by ID
 router.get('/booking/:id', bookingData)
-router.get("/bookings/:id", getBookingById);
+router.get('/bookings/:id', getBookingById)
 
-// delete booking 
-router.delete("/:id", deleteBooking)
+// ❌ Delete booking
+router.delete('/:id', deleteBooking)
 
+// 👤 Get bookings for logged-in user
+router.get('/my-bookings', getUserBookings)
 
-// Get reserved seats for a specific movie + showtime
+// 📊 Get weekly bookings stats
+router.get('/weekly-bookings', getWeeklyBookings)
+
+// 📜 Get all bookings
+router.get('/', getAllBookings)
+
+// 💺 Get reserved seats for a specific movie + showtime
 router.get('/reserved-seats', getReservedSeats)
-// Update payment status
+
+// 💳 Update payment status
 router.patch('/booking/:id/payment', updatePaymentStatus)
-// Check and update booking expiry
+
+// ⏰ Check and update booking expiry
 router.post('/booking/:id/expiry', checkBookingExpiry)
 
+// =========================
+// ✅ Export Router
+// =========================
 module.exports = router

@@ -1,6 +1,9 @@
+// ==========================
+// Booking Controller
+// ==========================
 const Booking = require('../models/Booking')
 
-// ✅ Create new booking
+// ✅ Create new booking (auto-cancel after 10 minutes if unpaid)
 const createBooking = async (req, res) => {
   try {
     const {
@@ -42,13 +45,80 @@ const createBooking = async (req, res) => {
       screen,
       selectedSeats,
       totalAmount,
+      userId,
       userName,
       userEmail,
       status: 'pending',
       paymentStatus: 'unpaid',
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
     })
 
     await newBooking.save()
+
+    // ✅ Auto-cancel after 10 minutes if not paid
+    setTimeout(async () => {
+      try {
+        const booking = await Booking.findById(newBooking._id)
+        if (
+          booking &&
+          booking.paymentStatus === 'unpaid' &&
+          booking.status === 'pending'
+        ) {
+          booking.status = 'cancelled'
+          await booking.save()
+
+          console.log(`⏰ Booking ${booking._id} auto-cancelled after 10 min`)
+
+          // 🔁 Socket update
+          const io = req.app.get('io')
+          if (io) {
+            const room = `${movieId}-${showDate}-${showTime}`
+
+            const allBookings = await Booking.find({
+              movieId,
+              showDate: new Date(showDate),
+              showTime,
+              status: { $ne: 'cancelled' },
+            })
+
+            const reservedSeats = allBookings.flatMap((b) => b.selectedSeats)
+
+            io.to(room).emit('reservedSeatsUpdate', {
+              movieId,
+              showDate,
+              showTime,
+              reservedSeats,
+            })
+
+            io.to(room).emit('bookingExpired', {
+              bookingId: booking._id,
+              message: 'A booking has expired',
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Auto-cancel error:', error)
+      }
+    }, 10 * 60 * 1000)
+
+    // ✅ Real-time seat update
+    const io = req.app.get('io')
+    if (io) {
+      const room = `${movieId}-${showDate}-${showTime}`
+      const allBookings = await Booking.find({
+        movieId,
+        showDate: new Date(showDate),
+        showTime,
+        status: { $ne: 'cancelled' },
+      })
+      const reservedSeats = allBookings.flatMap((b) => b.selectedSeats)
+      io.to(room).emit('reservedSeatsUpdate', {
+        movieId,
+        showDate,
+        showTime,
+        reservedSeats,
+      })
+    }
 
     res.status(201).json({
       message: 'Booking created successfully',
@@ -60,14 +130,12 @@ const createBooking = async (req, res) => {
   }
 }
 
-// ✅ Get booking by ID (single route)
+// ✅ Get booking by ID
 const bookingData = async (req, res) => {
   try {
     const { id } = req.params
     const booking = await Booking.findById(id)
-
     if (!booking) return res.status(404).json({ error: 'Booking not found' })
-
     res.status(200).json(booking)
   } catch (err) {
     console.error('❌ Error fetching booking:', err)
@@ -75,14 +143,12 @@ const bookingData = async (req, res) => {
   }
 }
 
-// ✅ Another get booking by ID (if needed for /bookings/:id)
+// ✅ Get another booking by ID
 const getBookingById = async (req, res) => {
   try {
     const { id } = req.params
     const booking = await Booking.findById(id)
-
     if (!booking) return res.status(404).json({ error: 'Booking not found' })
-
     res.status(200).json(booking)
   } catch (err) {
     console.error('❌ Error fetching booking:', err)
@@ -90,7 +156,7 @@ const getBookingById = async (req, res) => {
   }
 }
 
-// ✅ Get user bookings
+// ✅ Get user bookings by email
 const getUserBookings = async (req, res) => {
   try {
     const { userEmail } = req.query
@@ -116,19 +182,28 @@ const getAllBookings = async (req, res) => {
   }
 }
 
-// ✅ Get reserved seats for a show
+// ✅ Get reserved seats for a movie show
 const getReservedSeats = async (req, res) => {
   try {
-    const { showId } = req.query
-    if (!showId) return res.status(400).json({ error: 'showId is required' })
+    const { movieId, showDate, showTime } = req.query
+    if (!movieId || !showDate || !showTime) {
+      return res
+        .status(400)
+        .json({ error: 'movieId, showDate, and showTime are required' })
+    }
 
-    const bookings = await Booking.find({ showId })
+    const bookings = await Booking.find({
+      movieId,
+      showDate: new Date(showDate),
+      showTime,
+      status: { $ne: 'cancelled' },
+    })
+
     const reservedSeats = bookings.flatMap((b) => b.selectedSeats)
-
-    res.json({ reservedSeats })
-  } catch (err) {
-    console.error('❌ Error fetching reserved seats:', err)
-    res.status(500).json({ error: 'Failed to fetch reserved seats' })
+    res.status(200).json({ reservedSeats })
+  } catch (error) {
+    console.error('❌ Error fetching reserved seats:', error)
+    res.status(500).json({ error: 'Server error' })
   }
 }
 
@@ -136,37 +211,73 @@ const getReservedSeats = async (req, res) => {
 const updatePaymentStatus = async (req, res) => {
   try {
     const { id } = req.params
-    const { paymentStatus } = req.body
+    const { paymentStatus, transactionId } = req.body
 
-    const booking = await Booking.findByIdAndUpdate(
-      id,
-      { paymentStatus },
-      { new: true }
-    )
-
+    const booking = await Booking.findById(id)
     if (!booking) return res.status(404).json({ error: 'Booking not found' })
 
-    res.json({ message: 'Payment status updated', booking })
-  } catch (err) {
-    console.error('❌ Error updating payment status:', err)
-    res.status(500).json({ error: 'Failed to update payment status' })
+    booking.paymentStatus = paymentStatus || booking.paymentStatus
+    booking.status = paymentStatus === 'paid' ? 'confirmed' : booking.status
+    if (transactionId) booking.transactionId = transactionId
+
+    await booking.save()
+
+    // 🔁 Socket update
+    const io = req.app.get('io')
+    if (io) {
+      const room = `${booking.movieId}-${
+        booking.showDate.toISOString().split('T')[0]
+      }-${booking.showTime}`
+      io.to(room).emit('paymentUpdated', {
+        bookingId: booking._id,
+        paymentStatus: booking.paymentStatus,
+        status: booking.status,
+      })
+    }
+
+    res.status(200).json({ message: 'Payment status updated', booking })
+  } catch (error) {
+    console.error('❌ Error updating payment:', error)
+    res.status(500).json({ error: 'Server error' })
   }
 }
 
-// Get weekly bookings (per day)
+// ✅ Check booking expiry manually
+const checkBookingExpiry = async (req, res) => {
+  try {
+    const { id } = req.params
+    const booking = await Booking.findById(id)
+    if (!booking) return res.status(404).json({ error: 'Booking not found' })
+
+    const now = new Date()
+    const isExpired =
+      booking.expiresAt < now && booking.paymentStatus === 'unpaid'
+
+    if (isExpired && booking.status === 'pending') {
+      booking.status = 'cancelled'
+      await booking.save()
+      return res.status(200).json({ expired: true, booking })
+    }
+
+    res.status(200).json({ expired: false, booking })
+  } catch (error) {
+    console.error('❌ Error checking expiry:', error)
+    res.status(500).json({ error: 'Server error' })
+  }
+}
+
+// ✅ Get weekly booking summary
 const getWeeklyBookings = async (req, res) => {
   try {
-    // Aggregation: group bookings by day of week
     const bookings = await Booking.aggregate([
       {
         $group: {
-          _id: { $dayOfWeek: '$showDate' }, // Sunday = 1, Monday = 2, ...
+          _id: { $dayOfWeek: '$showDate' },
           totalBookings: { $sum: 1 },
         },
       },
     ])
 
-    // Map day numbers to names
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const weeklyBookings = {
       Sun: 0,
@@ -179,100 +290,44 @@ const getWeeklyBookings = async (req, res) => {
     }
 
     bookings.forEach((item) => {
-      const dayIndex = item._id - 1 // $dayOfWeek returns 1–7
+      const dayIndex = item._id - 1
       weeklyBookings[dayNames[dayIndex]] = item.totalBookings
     })
 
     res.status(200).json(weeklyBookings)
   } catch (error) {
-    console.error(' Error fetching weekly bookings:', error)
+    console.error('❌ Error fetching weekly bookings:', error)
     res.status(500).json({ error: 'Server error' })
   }
 }
 
-// ✅ Check and update booking expiry
-const checkBookingExpiry = async (req, res) => {
-  try {
-    const { id } = req.params
-    const booking = await Booking.findById(id)
-
-    if (!booking) return res.status(404).json({ error: 'Booking not found' })
-
-    const bookingTime = new Date(booking.createdAt)
-    const now = new Date()
-    const diffMinutes = (now - bookingTime) / 1000 / 60
-
-    if (diffMinutes > 15 && booking.paymentStatus === 'unpaid') {
-      booking.status = 'expired'
-      await booking.save()
-      return res.json({ message: 'Booking expired', booking })
-    }
-
-    res.json({ message: 'Booking is still valid', booking })
-  } catch (err) {
-    console.error('❌ Error checking booking expiry:', err)
-    res.status(500).json({ error: 'Failed to check booking expiry' })
-  }
-}
-
-// Delete booking by ID
+// ✅ Delete a booking
 const deleteBooking = async (req, res) => {
   try {
     const { id } = req.params
-
-    // Check if booking exists
     const booking = await Booking.findById(id)
-    if (!booking) {
-      return res.status(404).json({ error: 'Booking not found' })
-    }
+    if (!booking) return res.status(404).json({ error: 'Booking not found' })
 
-    // Delete booking
     await Booking.findByIdAndDelete(id)
-
     res.status(200).json({ message: 'Booking deleted successfully' })
   } catch (error) {
-    console.error(' Error deleting booking:', error)
+    console.error('❌ Error deleting booking:', error)
     res.status(500).json({ error: 'Server error' })
   }
 }
 
-// const updateBooking = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const updateData = req.body; // e.g. { status: "confirmed" }
-
-//     // Check if booking exists
-//     const booking = await Booking.findById(id);
-//     if (!booking) {
-//       return res.status(404).json({ error: "Booking not found" });
-//     }
-
-//     // Update booking with new data
-//     const updatedBooking = await Booking.findByIdAndUpdate(
-//       id,
-//       { $set: updateData },
-//       { new: true } // return updated document
-//     );
-
-//     res.status(200).json({
-//       message: "Booking updated successfully",
-//       booking: updatedBooking,
-//     });
-//   } catch (error) {
-//     console.error("❌ Error updating booking:", error);
-//     res.status(500).json({ error: "Server error" });
-//   }
-// };
-
+// ==========================
+// Exports
+// ==========================
 module.exports = {
   createBooking,
   bookingData,
   getBookingById,
   getUserBookings,
+  getAllBookings,
   getReservedSeats,
   updatePaymentStatus,
   checkBookingExpiry,
   getWeeklyBookings,
-  getAllBookings,
   deleteBooking,
 }

@@ -1,62 +1,123 @@
-const Showtime = require("../models/Showtime");
+const Booking = require('../models/Booking')
 
-// Add new showtime
-const addShowtime = async (req, res) => {
-    try {
-        const { movieId, date, time, price, hall } = req.body;
+const TOTAL_SEATS = 100
 
-        const newShowtime = new Showtime({
-            movieId,
-            date,
-            time,
-            price,
-            hall
-        });
+// ✅ Fixed 3 Showtimes
+const SHOWTIMES = [
+  { id: 'showtime-1', time: '03:00 PM', price: 150 },
+  { id: 'showtime-2', time: '06:00 PM', price: 200 },
+  { id: 'showtime-3', time: '09:00 PM', price: 180 },
+]
 
-        await newShowtime.save();
-        res.status(201).json(newShowtime);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Failed to add showtime" });
+// ✅ Get Available Showtimes
+const getAvailableShowtimes = async (req, res) => {
+  try {
+    const { movieId, showDate } = req.query
+
+    if (!movieId || !showDate) {
+      return res.status(400).json({ error: 'movieId and showDate are required' })
     }
-};
 
-// Get all showtimes
-const getShowtimes = async (req, res) => {
-    try {
-        const showtimes = await Showtime.find().populate("movieId");
-        res.status(200).json(showtimes);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Failed to fetch showtimes" });
+    const today = new Date().toISOString().split('T')[0]
+    const now = new Date()
+    const currentHour = now.getHours()
+    const currentMinute = now.getMinutes()
+
+    const showtimesWithAvailability = await Promise.all(
+      SHOWTIMES.map(async (showtime) => {
+        // Count booked seats
+        const bookings = await Booking.find({
+          movieId,
+          showDate: new Date(showDate),
+          showTime: showtime.time,
+          status: { $ne: 'cancelled' }
+        })
+
+        const bookedSeatsCount = bookings.reduce(
+          (total, booking) => total + booking.selectedSeats.length, 
+          0
+        )
+
+        const availableSeats = TOTAL_SEATS - bookedSeatsCount
+
+        // Check if past show (only for today)
+        let isPast = false
+        if (showDate === today) {
+          const [time, period] = showtime.time.split(' ')
+          const [hour, minute] = time.split(':').map(Number)
+          
+          let hour24 = hour
+          if (period === 'PM' && hour !== 12) hour24 += 12
+          else if (period === 'AM' && hour === 12) hour24 = 0
+
+          // Show হয়ে গেলে isPast = true
+          if (currentHour > hour24 || (currentHour === hour24 && currentMinute >= minute)) {
+            isPast = true
+          }
+        }
+
+        return {
+          ...showtime,
+          available: availableSeats,
+          isAvailable: availableSeats > 0 && !isPast,
+          isPast
+        }
+      })
+    )
+
+    // শুধু active showtimes return করব
+    const activeShowtimes = showtimesWithAvailability.filter(show => !show.isPast)
+
+    res.status(200).json({ 
+      showtimes: activeShowtimes, 
+      totalSeats: TOTAL_SEATS 
+    })
+  } catch (error) {
+    console.error('❌ Error:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+// ✅ Delete Past Bookings
+const deletePastBookings = async (req, res) => {
+  try {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    const result = await Booking.deleteMany({ 
+      showDate: { $lt: today } 
+    })
+    
+    res.status(200).json({ 
+      message: 'Past bookings deleted', 
+      deletedCount: result.deletedCount 
+    })
+  } catch (error) {
+    console.error('❌ Error:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+// ✅ Auto Cleanup Function (server start এ call হবে)
+const autoCleanupPastBookings = async () => {
+  try {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    const result = await Booking.deleteMany({ 
+      showDate: { $lt: today } 
+    })
+    
+    if (result.deletedCount > 0) {
+      console.log(`🗑️ Cleanup: Deleted ${result.deletedCount} past bookings`)
     }
-};
+  } catch (error) {
+    console.error('❌ Cleanup error:', error)
+  }
+}
 
-
-
-// ✅ Update showtime
-const updateShowtime = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const updated = await Showtime.findByIdAndUpdate(id, req.body, { new: true });
-        if (!updated) return res.status(404).json({ message: "Showtime not found" });
-        res.status(200).json(updated);
-    } catch (error) {
-        res.status(500).json({ message: "Failed to update showtime" });
-    }
-};
-
-// ✅ Delete showtime
-const deleteShowtime = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const deleted = await Showtime.findByIdAndDelete(id);
-        if (!deleted) return res.status(404).json({ message: "Showtime not found" });
-        res.status(200).json({ message: "Showtime deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ message: "Failed to delete showtime" });
-    }
-};
-
-
-module.exports={addShowtime,getShowtimes,updateShowtime,deleteShowtime}
+module.exports = { 
+  getAvailableShowtimes, 
+  deletePastBookings, 
+  autoCleanupPastBookings 
+}

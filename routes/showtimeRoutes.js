@@ -1,15 +1,12 @@
-const express = require("express");
-const router = express.Router();
-const { addShowtime, getShowtimes, updateShowtime, deleteShowtime } = require("../controllers/showtimeController");
+// routes/showtimeRoutes.js
+const express = require("express")
+const router = express.Router()
+const { getAvailableShowtimes, deletePastBookings } = require("../controllers/showtimeController")
 
-// Add a new showtime
-router.post("/add", addShowtime);
+// ✅ Get available showtimes for a movie + date
+router.get("/", getAvailableShowtimes)  // frontend call: /api/showtime?movieId=xxx&showDate=yyyy-mm-dd
 
-// Get all showtimes
-router.get("/", getShowtimes);
-// updatate Showtime
-router.put("/:id", updateShowtime);
-// delete showtime
-router.delete("/:id", deleteShowtime);
+// ✅ Delete past bookings manually (optional)
+router.delete("/cleanup", deletePastBookings)
 
-module.exports = router;
+module.exports = router
