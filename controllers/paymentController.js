@@ -270,6 +270,34 @@ const getWeeklyRevenue = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+// ✅ Get Payments by User Email
+const getPaymentsByEmail = async (req, res) => {
+  try {
+    const { userEmail } = req.query; // Change to userEmail
+
+    if (!userEmail) {
+      return res
+        .status(400)
+        .json({ error: "Email query parameter is required" });
+    }
+
+    const payments = await Payment.find({ userEmail: userEmail }).sort({
+      createdAt: -1,
+    });
+
+    if (!payments.length) {
+      return res
+        .status(404)
+        .json({ message: "No payments found for this email" });
+    }
+
+    res.json(payments);
+  } catch (err) {
+    console.error("❌ Get payments by email error:", err);
+    res.status(500).json({ error: "Failed to fetch payments" });
+  }
+};
+
 
 module.exports = {
   initiatePayment,
@@ -277,4 +305,5 @@ module.exports = {
   getPaymentById,
   getAllPaymentData,
   getWeeklyRevenue,
+  getPaymentsByEmail,
 };
