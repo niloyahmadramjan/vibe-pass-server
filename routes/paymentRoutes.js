@@ -4,6 +4,7 @@ const {
   confirmPayment,
   getWeeklyRevenue,
   getAllPaymentData,
+  getPaymentsByEmail,
   getPaymentById,
 } = require("../controllers/paymentController");
 const Stripe = require("stripe");
@@ -14,10 +15,10 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 // ✅ Controller-based routes
 router.post("/", initiatePayment);
 router.post("/confirm-payment", confirmPayment);
+router.get("/user", getPaymentsByEmail);
 router.get("/weekly-revenue", getWeeklyRevenue);
 router.get("/", getAllPaymentData);
 router.get("/:id", getPaymentById);
-
 // ✅ Direct Stripe PaymentIntent
 router.post("/create-payment-intent", async (req, res) => {
   try {
