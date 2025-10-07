@@ -253,19 +253,54 @@ const getAllPaymentData = async (req, res) => {
 };
 
 // ✅ Get Weekly Revenue
+// const getWeeklyRevenue = async (req, res) => {
+//   try {
+//     const oneWeekAgo = new Date();
+//     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+//     const payments = await Payment.find({
+//       status: "paid",
+//       updatedAt: { $gte: oneWeekAgo },
+//     });
+
+//     const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
+
+//     res.json({ totalRevenue, count: payments.length });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+//  Get Weekly Revenue
+
 const getWeeklyRevenue = async (req, res) => {
   try {
     const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 6); 
 
     const payments = await Payment.find({
       status: "paid",
       updatedAt: { $gte: oneWeekAgo },
     });
 
-    const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
+    // Initialize 7 days with 0 revenue
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      return {
+        name: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        revenue: 0,
+      };
+    });
 
-    res.json({ totalRevenue, count: payments.length });
+    // Group payments by day
+    payments.forEach((p) => {
+      const dayName = new Date(p.updatedAt).toLocaleDateString('en-US', { weekday: 'short' });
+      const day = days.find((d) => d.name === dayName);
+      if (day) day.revenue += p.amount;
+    });
+
+    res.json(days);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -297,6 +332,7 @@ const getPaymentsByEmail = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch payments" });
   }
 };
+
 
 
 module.exports = {
