@@ -4,8 +4,8 @@ const {
   confirmPayment,
   getWeeklyRevenue,
   getAllPaymentData,
-  getPaymentById,
   getPaymentsByEmail,
+  getPaymentById,
 } = require("../controllers/paymentController");
 const Stripe = require("stripe");
 
@@ -19,9 +19,6 @@ router.get("/user", getPaymentsByEmail);
 router.get("/weekly-revenue", getWeeklyRevenue);
 router.get("/", getAllPaymentData);
 router.get("/:id", getPaymentById);
-
-
-
 // ✅ Direct Stripe PaymentIntent
 router.post("/create-payment-intent", async (req, res) => {
   try {
