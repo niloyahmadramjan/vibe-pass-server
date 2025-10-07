@@ -22,7 +22,7 @@ const userRoutes = require('./routes/userRoutes')
 const movieRoutes = require('./routes/movieRoutes')
 const showtimeRoutes = require('./routes/showtimeRoutes')
 const couponRoutes = require('./routes/couponRoutes')
-
+const events = require('./routes/eventRoutes')
 // =========================
 // ⚙️ App Configuration
 // =========================
@@ -105,6 +105,8 @@ app.use('/api/movies', movieRoutes)
 
 // Showtimes
 app.use('/api/showtime', showtimeRoutes)
+// Events
+app.use('/api/events',events)
 
 // Coupons
 app.use('/api/coupons', couponRoutes)
