@@ -1,5 +1,6 @@
 require('dotenv').config()
 const Payment = require('../models/Payment')
+const Booking = require('../models/Booking')
 const Stripe = require('stripe')
 const nodemailer = require('nodemailer')
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY)
@@ -45,12 +46,13 @@ const confirmPayment = async (req, res) => {
       sessionTitle,
       amount,
       theaterName,
+      bookingId,
       showTime,
       selectedSeats,
       screen,
     } = paymentData
 
-    // 1. Stripe Payment যাচাই
+    // 1. Stripe Payment
     const paymentIntent = await stripe.paymentIntents.retrieve(transactionId)
     if (!paymentIntent || paymentIntent.status !== 'succeeded') {
       return res.status(400).json({ error: 'Payment not successful yet' })
@@ -62,6 +64,21 @@ const confirmPayment = async (req, res) => {
       { ...paymentData, status: 'paid', updatedAt: new Date() },
       { new: true }
     )
+    // update booking status to "paid"
+
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      bookingId,
+      {
+        status: 'confirmed',
+        paymentStatus: 'paid',
+        paymentId: transactionId,
+      },
+      { new: true }
+    )
+
+    if (!updatedBooking) {
+      return res.status(404).json({ message: 'Booking not found' })
+    }
 
     if (!payment) {
       payment = await Payment.create({
