@@ -3,7 +3,7 @@ const Payment = require('../models/Payment')
 const Stripe = require('stripe')
 const nodemailer = require('nodemailer')
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY)
-
+const Booking = require("../models/Booking");
 // ✅ Initiate Payment
 const initiatePayment = async (req, res) => {
   try {
@@ -48,6 +48,7 @@ const confirmPayment = async (req, res) => {
       showTime,
       selectedSeats,
       screen,
+      bookingId
     } = paymentData
 
     // 1. Stripe Payment যাচাই
@@ -70,6 +71,22 @@ const confirmPayment = async (req, res) => {
         provider: 'stripe',
         providerPaymentId: transactionId,
       })
+    }
+
+
+
+    // 3️⃣ Update Booking Status (✅ auto confirm)
+    if (bookingId) {
+      await Booking.findByIdAndUpdate(
+        bookingId,
+        {
+          $set: {
+            status: "confirmed",
+            paymentStatus: "paid",
+          },
+        },
+        { new: true }
+      );
     }
 
     // 3. Email পাঠানো

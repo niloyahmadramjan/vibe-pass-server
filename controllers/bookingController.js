@@ -149,6 +149,7 @@ const getBookingById = async (req, res) => {
     const { id } = req.params
     const booking = await Booking.findById(id)
     if (!booking) return res.status(404).json({ error: 'Booking not found' })
+      console.log(booking)
     res.status(200).json(booking)
   } catch (err) {
     console.error('❌ Error fetching booking:', err)

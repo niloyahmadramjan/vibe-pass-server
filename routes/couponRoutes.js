@@ -2,16 +2,17 @@
 const express = require("express");
 const router = express.Router();
 const { createCoupon, applyCoupon, getCoupons, deleteCoupon, updateCoupon } = require("../controllers/couponController");
-
+const adminOnly = require('../middlewares/adminOnly');
+const verifyToken =require("../middlewares/verifyToken")
 // Admin creates a coupon
-router.post("/add", createCoupon);
+router.post("/add", verifyToken, adminOnly, createCoupon);
 
-// User applies a coupon
+// User applies a coupon..........................................................
 router.post("/apply", applyCoupon);
 // get coupons
-router.get("/", getCoupons);
+router.get("/", verifyToken, adminOnly, getCoupons);
 // delete Coupon
-router.delete("/:id", deleteCoupon);
-router.put("/:id",updateCoupon)
+router.delete("/:id", verifyToken, deleteCoupon);
+router.put("/:id", verifyToken,updateCoupon)
 
 module.exports = router;
