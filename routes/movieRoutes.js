@@ -18,12 +18,12 @@ const adminOnly = require("../middlewares/adminOnly");
 router.get("/", getAllMovies);
 router.get("/:id", getMovieById);
 router.get("/category/:category", getMoviesByCategory);
-router.get("/:tmdbId/videos", getMovieVideos);
+router.get("/:id/videos", getMovieVideos);
 
 // 🟥 Admin Routes
 router.post("/", verifyToken, adminOnly, addMovie);
 router.put("/:id", verifyToken, adminOnly, updateMovie);
 router.delete("/:id", verifyToken, adminOnly, deleteMovie);
-router.post("/import/:category", verifyToken, adminOnly, importMovies);
+router.post("/import/:category", importMovies);
 
 module.exports = router;

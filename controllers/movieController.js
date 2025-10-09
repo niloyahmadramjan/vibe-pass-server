@@ -2,7 +2,7 @@
 
 // ✅ Import movies by category (automatically fetch and save)
 const axios = require("axios");
-const Movie = require("../models/Movie");
+const Movie = require("../models/Movie")
 require("dotenv").config();
 
 const BASE_URL = "https://api.themoviedb.org/3";
@@ -36,11 +36,13 @@ const addMovie = async (req, res) => {
     try {
         const movieData = req.body;
 
-        if (!movieData.tmdb_id) {
-            return res.status(400).json({ message: "tmdb_id is required" });
+        if (!movieData.id) {
+            return res.status(400).json({ message: "id is required" });
         }
 
-        const existing = await Movie.findOne({ tmdb_id: movieData.tmdb_id });
+        movieData.id = Number(movieData.id);
+
+        const existing = await Movie.findOne({ id: movieData.id });
         if (existing) {
             return res.status(400).json({ message: "Movie already exists" });
         }
@@ -57,11 +59,12 @@ const addMovie = async (req, res) => {
 
 
 
+
 // ✅ Admin: Update existing movie
 const updateMovie = async (req, res) => {
     try {
         const { id } = req.params;
-        const updated = await Movie.findOneAndUpdate({ tmdb_id: id }, req.body, { new: true });
+        const updated = await Movie.findOneAndUpdate({ id: id }, req.body, { new: true });
 
         if (!updated) {
             return res.status(404).json({ message: "Movie not found" });
@@ -80,7 +83,7 @@ const updateMovie = async (req, res) => {
 const deleteMovie = async (req, res) => {
     try {
         const { id } = req.params;
-        const deleted = await Movie.findOneAndDelete({ tmdb_id: id });
+        const deleted = await Movie.findOneAndDelete({ id: id });
 
         if (!deleted) {
             return res.status(404).json({ message: "Movie not found" });
@@ -113,10 +116,10 @@ const importMovies = async (req, res) => {
 
         const bulk = movies.map(m => ({
             updateOne: {
-                filter: { tmdb_id: m.id },
+                filter: { id: m.id },
                 update: {
                     $set: {
-                        tmdb_id: m.id,
+                        id: m.id,
                         title: m.title,
                         original_title: m.original_title,
                         overview: m.overview,
@@ -180,7 +183,7 @@ const getMoviesByCategory = async (req, res) => {
 const getMovieById = async (req, res) => {
     try {
         const { id } = req.params;
-        const movie = await Movie.findOne({ tmdb_id: id });
+        const movie = await Movie.findOne({ id: id });
         if (!movie) return res.status(404).json({ message: "Movie not found" });
         res.status(200).json(movie);
     } catch (error) {
@@ -192,15 +195,15 @@ const getMovieById = async (req, res) => {
 
 
 // 🎬 Fetch TMDB Videos..............................
- const getMovieVideos = async (req, res) => {
+const getMovieVideos = async (req, res) => {
     try {
-        const { tmdbId } = req.params;
-
+        const { id } = req.params;
+      
         const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
         // 🔹 Fetch from TMDB videos endpoint
         const response = await axios.get(
-            `https://api.themoviedb.org/3/movie/${tmdbId}/videos?api_key=${TMDB_API_KEY}&language=en-US`
+            `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=en-US`
         );
 
         res.json(response.data); // return results array
@@ -210,5 +213,5 @@ const getMovieById = async (req, res) => {
     }
 };
 
-module.exports = { getAllMovies, getMoviesByCategory, getMovieById, importMovies, importMovies, getMovieVideos, addMovie, updateMovie,deleteMovie };
+module.exports = { getAllMovies, getMoviesByCategory, getMovieById, importMovies, importMovies, getMovieVideos, addMovie, updateMovie, deleteMovie };
 

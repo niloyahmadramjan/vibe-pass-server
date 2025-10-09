@@ -8,7 +8,7 @@ const verifyToken =require("../middlewares/verifyToken")
 router.post("/add", verifyToken, adminOnly, createCoupon);
 
 // User applies a coupon..........................................................
-router.post("/apply", applyCoupon);
+router.post("/apply",verifyToken, applyCoupon);
 // get coupons
 router.get("/", verifyToken, adminOnly, getCoupons);
 // delete Coupon

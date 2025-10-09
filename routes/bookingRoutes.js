@@ -19,7 +19,8 @@ const {
   checkBookingExpiry,
   deleteBooking,
 } = require('../controllers/bookingController')
-
+const adminOnly = require('../middlewares/adminOnly');
+const verifyToken = require("../middlewares/verifyToken")
 // =========================
 // 🧭 Route Definitions
 // =========================
@@ -38,10 +39,10 @@ router.delete('/:id', deleteBooking)
 router.get('/my-bookings', getUserBookings)
 
 // 📊 Get weekly bookings stats
-router.get('/weekly-bookings', getWeeklyBookings)
+router.get('/weekly-bookings', verifyToken, adminOnly, getWeeklyBookings)
 
 // 📜 Get all bookings
-router.get('/', getAllBookings)
+router.get('/', verifyToken, adminOnly, getAllBookings)
 
 // 💺 Get reserved seats for a specific movie + showtime
 router.get('/reserved-seats', getReservedSeats)

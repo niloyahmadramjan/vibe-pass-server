@@ -12,8 +12,10 @@ const {
   getAllUsers,
   deleteUser,
   updateUser,
+
 } = require('../controllers/authController.js')
 const adminOnly = require('../middlewares/adminOnly');
+const verifyToken= require("../middlewares/verifyToken")
 
 router.post('/send-otp', sendOtp)
 router.post('/verify-otp', verifyOtp)
@@ -23,11 +25,13 @@ router.post('/login', login)
 router.post('/forgot-password', forgotPassword)
 router.post('/reset-password', resetPassword)
 // for admin ..........................
-router.get("/weekly-users",adminOnly, getWeeklyUsers);
+router.get("/weekly-users", adminOnly, getWeeklyUsers);
 // GET all users
-router.get("/", getAllUsers);
-router.delete("/:id", deleteUser)
+router.get("/", verifyToken, adminOnly, getAllUsers);
+router.delete("/:id", verifyToken,adminOnly, deleteUser)
 // Admin update user info
-router.put("/:id", adminOnly, updateUser)
+router.put("/:id", verifyToken, adminOnly, updateUser)
+
+
 
 module.exports = router
