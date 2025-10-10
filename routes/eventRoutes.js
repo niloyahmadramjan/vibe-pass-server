@@ -9,16 +9,17 @@ const {
     deleteEvent
 } = require('../controllers/eventController');
 
-// const auth = require('../middleware/auth'); // ✅ Comment out for now
+const adminOnly = require('../middlewares/adminOnly');
+const verifyToken =require("../middlewares/verifyToken")
+// user routes................................................
 
-// Public routes
 router.get('/', getAllEvents);
 router.get('/:id', getEventById);
+// Admin routers......................................................................
 
-
-router.post('/', createEvent);
-router.put('/:id', updateEvent); 
-router.delete('/:id', deleteEvent); 
+router.post('/',verifyToken,adminOnly, createEvent);
+router.put('/:id',verifyToken,adminOnly, updateEvent); 
+router.delete('/:id',verifyToken,adminOnly, deleteEvent); 
 
 module.exports = router;
  

@@ -80,7 +80,7 @@ const registerUser = async (req, res) => {
     res.json({
       success: true,
       token,
-      user: { id: user._id, name: user.name, email: user.email },
+      user: { id: user._id, name: user.name, email: user.email, role : user.role },
     })
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -123,7 +123,7 @@ const login = async (req, res) => {
 
     // 3. Generate JWT
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user._id, email: user.email ,role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     )
@@ -269,6 +269,53 @@ const deleteUser = async (req, res) => {
   }
 };
 
+
+
+// Update user by ID
+ const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const updatedUser = await user.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User updated successfully',
+      data: updatedUser
+    });
+
+  } catch (error) {
+    console.error('Update user error:', error);
+
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+
 // Export functions
 module.exports = {
   sendOtp,
@@ -281,5 +328,6 @@ module.exports = {
   getWeeklyUsers,
   getAllUsers,
   deleteUser,
+  updateUser
  
 }

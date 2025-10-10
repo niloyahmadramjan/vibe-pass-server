@@ -15,6 +15,7 @@ const connectDB = require('./config/db')
 // 🛣️ Import Routes
 const authRoutes = require('./routes/authRoutes')
 const paymentRoutes = require('./routes/paymentRoutes')
+const sslpaymentRoutes = require('./routes/sslpaymentRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
 const hallRoutes = require('./routes/hallRoutes')
 const pdfRoutes = require('./routes/pdfRoutes')
@@ -88,6 +89,7 @@ app.use('/api/ticket', bookingRoutes)
 
 // Payments
 app.use('/api/payments', paymentRoutes)
+app.use('/api/payments/sslcommerz', sslpaymentRoutes)
 
 // PDF Generation
 app.use('/api/generate-ticket-pdf', pdfRoutes)
@@ -96,8 +98,8 @@ app.use('/api/generate-ticket-pdf', pdfRoutes)
 app.use('/api/hall-distribution', hallRoutes)
 
 // Movies
-app.use('/api/movies', movieRoutes)
-
+// app.use('/api/movies', movieRoutes)
+app.use("/api/movies", movieRoutes);
 // Showtimes
 app.use('/api/showtime', showtimeRoutes)
 // Events

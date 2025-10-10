@@ -54,7 +54,7 @@ const bookingSchema = new Schema(
     },
     userId: {
       type: String,
-     
+
       trim: true,
     },
     userName: {
@@ -70,24 +70,24 @@ const bookingSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'cancelled'],
+      enum: ['pending', 'confirmed', 'cancelled', 'expired', 'checked_in'],
       default: 'pending',
     },
-paymentStatus: {
-  type: String,
-  enum: ['unpaid', 'paid', 'refunded'],
-  default: 'unpaid',
-},
-// ✅ ADD THESE 2 NEW FIELDS BELOW
-expiresAt: {
-  type: Date,
-  required: true,
-  index: true
-},
-transactionId: {
-  type: String,
-  trim: true
-},
+    paymentStatus: {
+      type: String,
+      enum: ['unpaid', 'paid', 'failed', 'refunded', 'partial'],
+      default: 'unpaid',
+    },
+    // ✅ ADD THESE 2 NEW FIELDS BELOW
+    expiresAt: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+    transactionId: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,
