@@ -98,8 +98,8 @@ app.use('/api/generate-ticket-pdf', pdfRoutes)
 app.use('/api/hall-distribution', hallRoutes)
 
 // Movies
-app.use('/api/movies', movieRoutes)
-
+// app.use('/api/movies', movieRoutes)
+app.use("/api/movies", movieRoutes);
 // Showtimes
 app.use('/api/showtime', showtimeRoutes)
 // Events
