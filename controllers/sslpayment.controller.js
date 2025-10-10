@@ -1,31 +1,34 @@
 const axios = require('axios')
 const { v4: uuidv4 } = require('uuid')
-const Payment = require('../models/Payment') 
+const Payment = require('../models/Payment')
 
 // Initiate SSLCommerz Payment
 const initiatePayment = async (req, res) => {
   try {
     const {
-      cus_name,
-      cus_phone,
-      cus_email,
-      total_amount,
+      transactionId, // optional from frontend, will be replaced by generated one
+      amount,
+      status,
       bookingId,
-      userId,
       sessionTitle,
+      userEmail,
+      userName,
     } = req.body
 
-    if (!cus_name || !cus_email || !total_amount) {
+    // ✅ Validate required fields
+    if (!amount || !userName || !userEmail || !bookingId) {
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
-    const txs_id = uuidv4()
-    const tran_id = `Inv-${txs_id}`
+    // ✅ Generate unique transaction ID for SSLCommerz
+    const tran_uuid = uuidv4()
+    const tran_id = `SSL-${tran_uuid}`
 
+    // ✅ Payment configuration for SSLCommerz
     const data = {
       store_id: process.env.STORE_ID,
       store_passwd: process.env.STORE_PASS,
-      total_amount: parseFloat(total_amount),
+      total_amount: parseFloat(amount),
       currency: 'BDT',
       tran_id,
 
@@ -37,65 +40,63 @@ const initiatePayment = async (req, res) => {
       product_name: sessionTitle || 'Movie Ticket',
       product_category: 'Entertainment',
       product_profile: 'general',
+      shipping_method: 'NO',
 
-      cus_name,
-      cus_email,
+      cus_name: userName,
+      cus_email: userEmail,
       cus_add1: '123 Street',
       cus_city: 'Dhaka',
       cus_country: 'Bangladesh',
-      cus_phone,
+      cus_phone: '01700000000',
 
-      value_a: txs_id,
-      value_b: bookingId || 'N/A',
-      value_c: userId || 'N/A',
-      value_d: 'custom_d',
+      // Optional metadata for tracking
+      value_a: bookingId,
+      value_b: userEmail,
     }
 
-    // SSLCommerz API request
+    // ✅ Call SSLCommerz API
     const response = await axios({
       method: 'POST',
-      url: process.env.BKASH_URL,
+      url: process.env.SSLCOMMERZ_API_URL,
       data,
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     })
 
     const gatewayURL = response.data?.GatewayPageURL
 
-    // Create payment document in MongoDB
+    // ✅ Store payment record in MongoDB
     await Payment.create({
       bookingId,
-      userId,
-      userEmail: cus_email,
-      amount: total_amount,
+      amount,
       currency: 'BDT',
       provider: 'sslcommerz',
       transactionId: tran_id,
-      sessionTitle: sessionTitle || 'N/A',
+      sessionTitle: sessionTitle || 'Movie Ticket',
+      userEmail,
       status: 'pending',
     })
 
     if (gatewayURL) {
-      return res.status(200).json({ GatewayPageURL: gatewayURL })
+      return res.status(200).json({ url: gatewayURL })
     } else {
-      return res
-        .status(500)
-        .json({
-          error: 'Failed to get GatewayPageURL',
-          response: response.data,
-        })
+      return res.status(500).json({
+        error: 'Failed to retrieve GatewayPageURL',
+        response: response.data,
+      })
     }
   } catch (error) {
     console.error(
       'Payment initiation error:',
       error.response?.data || error.message
     )
-    return res
-      .status(500)
-      .json({ error: 'Payment initiation failed', details: error.message })
+    return res.status(500).json({
+      error: 'Payment initiation failed',
+      details: error.message,
+    })
   }
 }
 
-// Handle Payment Success
+// ✅ Handle Payment Success
 const paymentSuccess = async (req, res) => {
   try {
     const paymentInfo = req.body
@@ -108,7 +109,6 @@ const paymentSuccess = async (req, res) => {
             status: 'paid',
             providerPaymentId: paymentInfo.val_id,
             sessionId: paymentInfo.sessionkey,
-            updatedAt: new Date(),
           },
         }
       )
@@ -124,7 +124,7 @@ const paymentSuccess = async (req, res) => {
   }
 }
 
-// Handle Payment Fail
+// ✅ Handle Payment Fail
 const paymentFail = async (req, res) => {
   try {
     const paymentInfo = req.body
@@ -135,7 +135,6 @@ const paymentFail = async (req, res) => {
         $set: {
           status: 'failed',
           providerPaymentId: paymentInfo.val_id,
-          updatedAt: new Date(),
         },
       }
     )
@@ -147,7 +146,7 @@ const paymentFail = async (req, res) => {
   }
 }
 
-// Handle Payment Cancel
+// ✅ Handle Payment Cancel
 const paymentCancel = async (req, res) => {
   try {
     const paymentInfo = req.body
@@ -156,9 +155,8 @@ const paymentCancel = async (req, res) => {
       { transactionId: paymentInfo.tran_id },
       {
         $set: {
-          status: 'cancelled',
+          status: 'failed',
           providerPaymentId: paymentInfo.val_id,
-          updatedAt: new Date(),
         },
       }
     )
