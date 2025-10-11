@@ -42,7 +42,8 @@ router.get('/my-bookings', getUserBookings)
 router.get('/weekly-bookings', verifyToken, adminOnly, getWeeklyBookings)
 
 // 📜 Get all bookings
-router.get('/', verifyToken, adminOnly, getAllBookings)
+// router.get('/', verifyToken, adminOnly, getAllBookings)          //...............................
+router.get('/', getAllBookings)          //...............................
 
 // 💺 Get reserved seats for a specific movie + showtime
 router.get('/reserved-seats', getReservedSeats)

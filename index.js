@@ -24,6 +24,7 @@ const movieRoutes = require('./routes/movieRoutes')
 const showtimeRoutes = require('./routes/showtimeRoutes')
 const couponRoutes = require('./routes/couponRoutes')
 const events = require('./routes/eventRoutes')
+const reminderRoutes = require("./routes/reminderRoutes")
 // =========================
 // ⚙️ App Configuration
 // =========================
@@ -112,6 +113,8 @@ app.use('/api/coupons', couponRoutes)
 
 // User (CRUD Operations)
 app.use('/api/user', userRoutes)
+
+app.use("/api/reminders", reminderRoutes)
 
 // =========================
 // 🗄️ Database + Server Start
