@@ -4,13 +4,13 @@ const User = require('../models/user');
 
 const createEvent = async (req, res) => {
     try {
-        console.log("📥 Received event data:", req.body);
-        console.log("👤 Request user object:", req.user); // This might be undefined
+        // console.log("📥 Received event data:", req.body);
+        // console.log("👤 Request user object:", req.user); // This might be undefined
 
         // ✅ FIX: Don't rely on req.user, use the createdBy from request body
         const { createdBy, userEmail, userName, ...eventData } = req.body;
 
-        console.log("👤 User from client:", { createdBy, userEmail, userName });
+        // console.log("👤 User from client:", { createdBy, userEmail, userName });
 
         // Basic validation for required fields
         const requiredFields = ['title', 'description', 'eventType', 'date', 'time', 'duration', 'poster', 'hall', 'screen', 'location', 'capacity', 'price', 'availableSeats'];
@@ -48,15 +48,15 @@ const createEvent = async (req, res) => {
                 const userExists = await user.findById(createdBy);
                 if (userExists) {
                     finalEventData.createdBy = createdBy;
-                    console.log("✅ Using provided user ID:", createdBy);
+                    // console.log("✅ Using provided user ID:", createdBy);
                 } else {
-                    console.log("⚠️ User not found in database, creating event without user");
+                    // console.log("⚠️ User not found in database, creating event without user");
                 }
             } catch (userError) {
-                console.log("⚠️ Error verifying user, creating event without user:", userError.message);
+                // console.log("⚠️ Error verifying user, creating event without user:", userError.message);
             }
         } else {
-            console.log("⚠️ No valid user ID provided, creating event without user");
+            // console.log("⚠️ No valid user ID provided, creating event without user");
         }
 
         // Add optional fields
@@ -66,12 +66,12 @@ const createEvent = async (req, res) => {
         if (req.body.tags && req.body.tags.length > 0) finalEventData.tags = req.body.tags;
         if (req.body.isFeatured !== undefined) finalEventData.isFeatured = req.body.isFeatured;
 
-        console.log("📤 Final event data for creation:", finalEventData);
+        // console.log("📤 Final event data for creation:", finalEventData);
 
         const event = new Event(finalEventData);
         const savedEvent = await event.save();
 
-        console.log("✅ Event created successfully with ID:", savedEvent._id);
+        // console.log("✅ Event created successfully with ID:", savedEvent._id);
 
         res.status(201).json({
             success: true,

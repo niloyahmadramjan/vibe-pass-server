@@ -46,7 +46,7 @@ const sendEmail = async (to, subject, otp, name) => {
       html: htmlContent,
     })
 
-    console.log('✅ Email sent to', to)
+    // console.log('✅ Email sent to', to)
   } catch (err) {
     console.error('❌ Email error:', err.message)
     throw new Error('Email not sent')
