@@ -91,7 +91,8 @@ const bookingSchema = new Schema(
     reminderSent: {
       type: Boolean,
       default: false,
-    }
+    },
+    reminderSentOneHour: { type: Boolean, default: false }
   },
   {
     timestamps: true,
