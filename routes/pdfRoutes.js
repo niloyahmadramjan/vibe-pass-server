@@ -1,10 +1,9 @@
-const express = require('express')
-const router = express.Router()
-const puppeteer = require('puppeteer')
-const QRCode = require('qrcode')
-const path = require('path')
+const express = require("express");
+const router = express.Router();
+const puppeteer = require("puppeteer");
+const QRCode = require("qrcode");
 
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const {
       movieTitle,
@@ -18,7 +17,7 @@ router.post('/', async (req, res) => {
       userEmail,
       userName,
       screen,
-    } = req.body
+    } = req.body;
 
     // ✅ Generate QR Code with ALL ticket info
     const qrData = {
@@ -33,9 +32,9 @@ router.post('/', async (req, res) => {
       userEmail,
       userName,
       screen,
-    }
+    };
 
-    const qrDataUrl = await QRCode.toDataURL(JSON.stringify(qrData))
+    const qrDataUrl = await QRCode.toDataURL(JSON.stringify(qrData));
 
     // ✅ Professional Ticket HTML
     const html = `
@@ -109,7 +108,7 @@ router.post('/', async (req, res) => {
               font-size: 13px;
               font-weight: bold;
               color: #fff;
-              background: ${status === 'paid' ? '#28a745' : '#dc3545'};
+              background: ${status === "paid" ? "#28a745" : "#dc3545"};
             }
             .qr {
               text-align: center;
@@ -146,17 +145,17 @@ router.post('/', async (req, res) => {
               <table>
                 <tr><th>Movie</th><td>${movieTitle}</td></tr>
                 <tr><th>Theater</th><td>${theaterName}</td></tr>
-                <tr><th>Screen</th><td>${screen || 'N/A'}</td></tr>
+                <tr><th>Screen</th><td>${screen || "N/A"}</td></tr>
                 <tr><th>Date</th><td>${showDate}</td></tr>
                 <tr><th>Time</th><td>${showTime}</td></tr>
-                <tr><th>Seats</th><td>${selectedSeats.join(', ')}</td></tr>
+                <tr><th>Seats</th><td>${selectedSeats.join(", ")}</td></tr>
               </table>
             </div>
 
             <div class="section">
               <h2>Booking Information</h2>
               <table>
-                <tr><th>Name</th><td>${userName || 'N/A'}</td></tr>
+                <tr><th>Name</th><td>${userName || "N/A"}</td></tr>
                 <tr><th>Email</th><td>${userEmail}</td></tr>
                 <tr><th>Transaction ID</th><td>${transactionId}</td></tr>
                 <tr><th>Status</th><td><span class="badge">${status}</span></td></tr>
@@ -176,47 +175,29 @@ router.post('/', async (req, res) => {
           </div>
         </body>
       </html>
-    `
+    `;
 
-    // ✅ Puppeteer launch (Render compatible)
-    const executablePath =
-      process.env.CHROME_PATH ||
-      path.resolve(
-        '/opt/render/.cache/puppeteer/chrome/linux-141.0.7390.54/chrome-linux64/chrome'
-      )
-
-    const browser = await puppeteer.launch({
-      headless: true,
-      executablePath,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--no-zygote',
-        '--single-process',
-      ],
-    })
-
-    const page = await browser.newPage()
-    await page.setContent(html, { waitUntil: 'networkidle0' })
+    // ✅ Puppeteer -> PDF
+    const browser = await puppeteer.launch({ args: ["--no-sandbox"] });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
     const pdfBuffer = await page.pdf({
-      format: 'A4',
+      format: "A4",
       printBackground: true,
-      margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' },
-    })
-    await browser.close()
+      margin: { top: "20px", bottom: "20px", left: "20px", right: "20px" },
+    });
+    await browser.close();
 
-    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
-      'Content-Disposition',
+      "Content-Disposition",
       `attachment; filename=ticket-${transactionId}.pdf`
-    )
-    res.send(pdfBuffer)
+    );
+    res.send(pdfBuffer);
   } catch (err) {
-    console.error('PDF generation error:', err)
-    res.status(500).json({ success: false, error: err.message })
+    console.error("PDF generation error:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
-})
+});
 
-module.exports = router
+module.exports = router;

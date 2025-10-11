@@ -548,7 +548,7 @@ exports.sendShowtimeReminders = async (req, res) => {
             booking.reminderSent = true;
             await booking.save();
 
-            console.log(` Premium red theme reminder sent to ${booking.userEmail} - ${minutesLeft} minutes remaining`);
+            // console.log(` Premium red theme reminder sent to ${booking.userEmail} - ${minutesLeft} minutes remaining`);
         }
 
         return res.status(200).json({ message: "Premium red theme reminders sent successfully" });
