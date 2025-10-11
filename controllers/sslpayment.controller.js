@@ -102,7 +102,7 @@ const paymentSuccess = async (req, res) => {
     const paymentInfo = req.body
 
     if (paymentInfo.status === 'VALID') {
-      await Payment.findOneAndUpdate(
+      const updatedPayment = await Payment.findOneAndUpdate(
         { transactionId: paymentInfo.tran_id },
         {
           $set: {
@@ -110,17 +110,24 @@ const paymentSuccess = async (req, res) => {
             providerPaymentId: paymentInfo.val_id,
             sessionId: paymentInfo.sessionkey,
           },
-        }
+        },
+        { new: true }
       )
 
-      return res.redirect(`${process.env.REDIRECT_CLIENTS}/success`)
+      return res.redirect(
+        `${process.env.REDIRECT_CLIENTS}/payment/status?status=success&paymentId=${updatedPayment?._id}`
+      )
     } else {
       console.warn('Invalid payment status:', paymentInfo.status)
-      return res.redirect(`${process.env.REDIRECT_CLIENTS}/invalid`)
+      return res.redirect(
+        `${process.env.REDIRECT_CLIENTS}/payment/status?status=invalid`
+      )
     }
   } catch (error) {
     console.error('Error in paymentSuccess:', error)
-    return res.redirect(`${process.env.REDIRECT_CLIENTS}/error`)
+    return res.redirect(
+      `${process.env.REDIRECT_CLIENTS}/payment/status?status=error`
+    )
   }
 }
 
@@ -129,20 +136,25 @@ const paymentFail = async (req, res) => {
   try {
     const paymentInfo = req.body
 
-    await Payment.findOneAndUpdate(
+    const updatedPayment = await Payment.findOneAndUpdate(
       { transactionId: paymentInfo.tran_id },
       {
         $set: {
           status: 'failed',
           providerPaymentId: paymentInfo.val_id,
         },
-      }
+      },
+      { new: true }
     )
 
-    return res.redirect(`${process.env.REDIRECT_CLIENTS}/fail`)
+    return res.redirect(
+      `${process.env.REDIRECT_CLIENTS}/payment/status?status=fail&paymentId=${updatedPayment?._id}`
+    )
   } catch (error) {
     console.error('Error in paymentFail:', error)
-    return res.redirect(`${process.env.REDIRECT_CLIENTS}/error`)
+    return res.redirect(
+      `${process.env.REDIRECT_CLIENTS}/payment/status?status=error`
+    )
   }
 }
 
@@ -151,20 +163,25 @@ const paymentCancel = async (req, res) => {
   try {
     const paymentInfo = req.body
 
-    await Payment.findOneAndUpdate(
+    const updatedPayment = await Payment.findOneAndUpdate(
       { transactionId: paymentInfo.tran_id },
       {
         $set: {
           status: 'failed',
           providerPaymentId: paymentInfo.val_id,
         },
-      }
+      },
+      { new: true }
     )
 
-    return res.redirect(`${process.env.REDIRECT_CLIENTS}/cancel`)
+    return res.redirect(
+      `${process.env.REDIRECT_CLIENTS}/payment/status?status=cancel&paymentId=${updatedPayment?._id}`
+    )
   } catch (error) {
     console.error('Error in paymentCancel:', error)
-    return res.redirect(`${process.env.REDIRECT_CLIENTS}/error`)
+    return res.redirect(
+      `${process.env.REDIRECT_CLIENTS}/payment/status?status=error`
+    )
   }
 }
 
