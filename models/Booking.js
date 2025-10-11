@@ -88,6 +88,10 @@ const bookingSchema = new Schema(
       type: String,
       trim: true,
     },
+    reminderSent: {
+      type: Boolean,
+      default: false,
+    }
   },
   {
     timestamps: true,
