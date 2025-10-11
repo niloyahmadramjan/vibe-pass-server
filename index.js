@@ -24,7 +24,8 @@ const movieRoutes = require('./routes/movieRoutes')
 const showtimeRoutes = require('./routes/showtimeRoutes')
 const couponRoutes = require('./routes/couponRoutes')
 const events = require('./routes/eventRoutes')
-const reminderRoutes = require("./routes/reminderRoutes")
+// const reminderRoutes = require("./routes/reminderRoutes")
+
 // =========================
 // ⚙️ App Configuration
 // =========================
@@ -114,13 +115,14 @@ app.use('/api/coupons', couponRoutes)
 // User (CRUD Operations)
 app.use('/api/user', userRoutes)
 
-app.use("/api/reminders", reminderRoutes)
+// app.use("/api/reminders", reminderRoutes)
 
 // =========================
 // 🗄️ Database + Server Start
 // =========================
 connectDB()
-
+// user get a email before 1 hour
+require("./controllers/reminderController")
 server.listen(port, () => {
   console.log(`✅ Express server running at: http://localhost:${port}`)
   console.log('🔌 Socket.io ready for real-time connections')
