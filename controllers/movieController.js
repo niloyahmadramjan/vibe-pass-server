@@ -195,11 +195,12 @@ const getMovieById = async (req, res) => {
 
 
 // 🎬 Fetch TMDB Videos..............................
+
 const getMovieVideos = async (req, res) => {
     try {
         const { id } = req.params;
-      
-        const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+
+        const TMDB_API_KEY = process.env.TMDBAPIKEY;
 
         // 🔹 Fetch from TMDB videos endpoint
         const response = await axios.get(
@@ -212,6 +213,7 @@ const getMovieVideos = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch videos" });
     }
 };
+
 
 module.exports = { getAllMovies, getMoviesByCategory, getMovieById, importMovies, importMovies, getMovieVideos, addMovie, updateMovie, deleteMovie };
 
