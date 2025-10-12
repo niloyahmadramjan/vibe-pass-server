@@ -115,7 +115,7 @@ const autoCleanupPastBookings = async () => {
     })
     
     if (result.deletedCount > 0) {
-      console.log(`🗑️ Cleanup: Deleted ${result.deletedCount} past bookings`)
+      // console.log(`🗑️ Cleanup: Deleted ${result.deletedCount} past bookings`)
     }
   } catch (error) {
     console.error('❌ Cleanup error:', error)

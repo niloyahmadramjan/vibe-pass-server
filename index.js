@@ -123,5 +123,6 @@ connectDB()
 require("./controllers/reminderController")
 server.listen(port, () => {
   console.log(`✅ Express server running at: http://localhost:${port}`)
+  // console.log('🔌 Socket.io ready for real-time connections')
   console.log('🔌 Socket.io ready for real-time connections')
 })

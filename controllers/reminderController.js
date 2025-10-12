@@ -1,4 +1,3 @@
-
 // controllers/reminderController.js
 const cron = require('node-cron')
 const nodemailer = require('nodemailer')
@@ -11,61 +10,61 @@ require('dotenv').config()
  */
 
 cron.schedule('*/5 * * * *', async () => {
-    try {
-        console.log('⏰ [Reminders] Checking for 1-hour-before reminders...')
+  try {
+    console.log('⏰ [Reminders] Checking for 1-hour-before reminders...')
 
-        const now = new Date()
+    const now = new Date()
 
-        // Find: bookings that are paid and 1-hour reminder not sent yet
-        const bookings = await Booking.find({
-            paymentStatus: 'paid',
-            reminderSentOneHour: { $ne: true },
-        })
+    // Find: bookings that are paid and 1-hour reminder not sent yet
+    const bookings = await Booking.find({
+      paymentStatus: 'paid',
+      reminderSentOneHour: { $ne: true },
+    })
 
-        const bookingsToRemind = bookings.filter((booking) => {
-            if (!booking.showDate || !booking.showTime) return false
+    const bookingsToRemind = bookings.filter((booking) => {
+      if (!booking.showDate || !booking.showTime) return false
 
-            const [time, modifier] = booking.showTime.split(' ')
-            let [hours, minutes] = time.split(':').map(Number)
+      const [time, modifier] = booking.showTime.split(' ')
+      let [hours, minutes] = time.split(':').map(Number)
 
-            if (modifier === 'PM' && hours !== 12) hours += 12
-            if (modifier === 'AM' && hours === 12) hours = 0
+      if (modifier === 'PM' && hours !== 12) hours += 12
+      if (modifier === 'AM' && hours === 12) hours = 0
 
-            const showDateTime = new Date(booking.showDate)
-            showDateTime.setHours(hours, minutes, 0, 0)
+      const showDateTime = new Date(booking.showDate)
+      showDateTime.setHours(hours, minutes, 0, 0)
 
-            const diffMins = (showDateTime - now) / (1000 * 60)
+      const diffMins = (showDateTime - now) / (1000 * 60)
 
-            // Within 1-hour range (tolerance: 58–62 minutes)
-            return diffMins >= 58 && diffMins <= 62
-        })
+      // Within 1-hour range (tolerance: 58–62 minutes)
+      return diffMins >= 58 && diffMins <= 62
+    })
 
-        if (!bookingsToRemind.length) return
+    if (!bookingsToRemind.length) return
 
-        // Nodemailer setup (Gmail app password recommended)
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS, // app password
-            },
-        })
+    // Nodemailer setup (Gmail app password recommended)
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS, // app password
+      },
+    })
 
-        for (const booking of bookingsToRemind) {
-            const [time, modifier] = booking.showTime.split(' ')
-            let [hours, minutes] = time.split(':').map(Number)
-            if (modifier === 'PM' && hours !== 12) hours += 12
-            if (modifier === 'AM' && hours === 12) hours = 0
+    for (const booking of bookingsToRemind) {
+      const [time, modifier] = booking.showTime.split(' ')
+      let [hours, minutes] = time.split(':').map(Number)
+      if (modifier === 'PM' && hours !== 12) hours += 12
+      if (modifier === 'AM' && hours === 12) hours = 0
 
-            const showDateTime = new Date(booking.showDate)
-            showDateTime.setHours(hours, minutes, 0, 0)
+      const showDateTime = new Date(booking.showDate)
+      showDateTime.setHours(hours, minutes, 0, 0)
 
-            const timeLeft = showDateTime - now
-            const minutesLeft = Math.floor(timeLeft / (1000 * 60))
-            const secondsLeft = Math.floor((timeLeft % (1000 * 60)) / 1000)
+      const timeLeft = showDateTime - now
+      const minutesLeft = Math.floor(timeLeft / (1000 * 60))
+      const secondsLeft = Math.floor((timeLeft % (1000 * 60)) / 1000)
 
-            // ====== email HTML template ======
-            const html = `<!DOCTYPE html>
+      // ====== email HTML template ======
+      const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -143,28 +142,47 @@ cron.schedule('*/5 * * * *', async () => {
                 <div class="info-grid-enhanced">
                     <div class="info-item-enhanced">
                         <div class="info-label-enhanced">Movie Title</div>
-                        <div class="info-value-enhanced">${booking.movieTitle}</div>
+                        <div class="info-value-enhanced">${
+                          booking.movieTitle
+                        }</div>
                     </div>
                     <div class="info-item-enhanced">
                         <div class="info-label-enhanced"> Theater Venue</div>
-                        <div class="info-value-enhanced">${booking.theaterName}</div>
+                        <div class="info-value-enhanced">${
+                          booking.theaterName
+                        }</div>
                     </div>
                     <div class="info-item-enhanced">
                         <div class="info-label-enhanced"> Screen Number</div>
-                        <div class="info-value-enhanced">${booking.screen || 'Main Hall'}</div>
+                        <div class="info-value-enhanced">${
+                          booking.screen || 'Main Hall'
+                        }</div>
                     </div>
                     <div class="info-item-enhanced">
                         <div class="info-label-enhanced"> Show Date</div>
-                        <div class="info-value-enhanced">${new Date(booking.showDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                        <div class="info-value-enhanced">${new Date(
+                          booking.showDate
+                        ).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}</div>
                     </div>
                     <div class="info-item-enhanced">
                         <div class="info-label-enhanced"> Show Time</div>
-                        <div class="info-value-enhanced">${booking.showTime}</div>
+                        <div class="info-value-enhanced">${
+                          booking.showTime
+                        }</div>
                     </div>
                     <div class="info-item-enhanced">
                         <div class="info-label-enhanced"> Your Seats</div>
                         <div class="seats-container">
-                            ${booking.selectedSeats.map(seat => `<div class="seat-pill">${seat}</div>`).join('')}
+                            ${booking.selectedSeats
+                              .map(
+                                (seat) => `<div class="seat-pill">${seat}</div>`
+                              )
+                              .join('')}
                         </div>
                     </div>
                 </div>
@@ -177,11 +195,15 @@ cron.schedule('*/5 * * * *', async () => {
                 <div class="info-grid-enhanced">
                     <div class="info-item-enhanced">
                         <div class="info-label-enhanced"> Guest Name</div>
-                        <div class="info-value-enhanced">${booking.userName || 'Valued Customer'}</div>
+                        <div class="info-value-enhanced">${
+                          booking.userName || 'Valued Customer'
+                        }</div>
                     </div>
                     <div class="info-item-enhanced">
                         <div class="info-label-enhanced">Email Address</div>
-                        <div class="info-value-enhanced">${booking.userEmail}</div>
+                        <div class="info-value-enhanced">${
+                          booking.userEmail
+                        }</div>
                     </div>
                     <div class="info-item-enhanced">
                         <div class="info-label-enhanced"> Booking Status</div>
@@ -217,25 +239,27 @@ cron.schedule('*/5 * * * *', async () => {
     </div>
 </body>
 </html>`
-            // ====== HTML template end ======
+      // ====== HTML template end ======
 
-            const mailOptions = {
-                from: `"VibePass Cinema" <${process.env.EMAIL_USER}>`,
-                to: booking.userEmail,
-                subject: ` Reminder: ${booking.movieTitle} starts at ${booking.showTime} (in ~1 hour)`,
-                html,
-            }
+      const mailOptions = {
+        from: `"VibePass Cinema" <${process.env.EMAIL_USER}>`,
+        to: booking.userEmail,
+        subject: ` Reminder: ${booking.movieTitle} starts at ${booking.showTime} (in ~1 hour)`,
+        html,
+      }
 
-            // send mail
-            await transporter.sendMail(mailOptions)
+      // send mail
+      await transporter.sendMail(mailOptions)
 
-            // mark as sent (use a dedicated flag for 1-hour reminder)
-            booking.reminderSentOneHour = true
-            await booking.save()
+      // mark as sent (use a dedicated flag for 1-hour reminder)
+      booking.reminderSentOneHour = true
+      await booking.save()
 
-            console.log(`📩 1-hour reminder sent to ${booking.userEmail} for "${booking.movieTitle}"`)
-        }
-    } catch (err) {
-        console.error('❌ Error in reminder cron:', err)
+      console.log(
+        `📩 1-hour reminder sent to ${booking.userEmail} for "${booking.movieTitle}"`
+      )
     }
+  } catch (err) {
+    console.error('❌ Error in reminder cron:', err)
+  }
 })
