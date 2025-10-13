@@ -16,7 +16,7 @@ const sendEmail = async (to, subject, otp, name) => {
         <p style="font-size: 16px; color: #333;">Hello <strong>${name}</strong>,</p>
         <p style="font-size: 16px; color: #333;">
           Use the following OTP to verify your email for <strong>VibePass</strong>. 
-          This code will expire in <strong>10 minutes</strong>.
+          This code will expire in <strong>5 minutes</strong>.
         </p>
 
         <div style="margin: 20px auto; text-align: center;">
