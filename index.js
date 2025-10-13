@@ -40,8 +40,7 @@ const server = http.createServer(app)
 // =========================
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true,
+    origin: '*',
   },
 })
 
@@ -62,6 +61,15 @@ io.on('connection', (socket) => {
   // Handle disconnect
   socket.on('disconnect', () => {
     console.log('❌ User disconnected:', socket.id)
+  })
+
+  // live chat
+  socket.on('sendMessage', (data) => {
+    io.emit('receiveMessage', data)
+  })
+
+  socket.on('userTyping', (status) => {
+    socket.broadcast.emit('userTyping', status)
   })
 })
 
