@@ -7,6 +7,8 @@ const {
   getPaymentsByEmail,
   getPaymentById,
 } = require("../controllers/paymentController");
+const adminOnly = require('../middlewares/adminOnly');
+const verifyToken =require("../middlewares/verifyToken")
 const Stripe = require("stripe");
 
 const router = express.Router();
@@ -16,7 +18,7 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 router.post("/", initiatePayment);
 router.post("/confirm-payment", confirmPayment);
 router.get("/user", getPaymentsByEmail);
-router.get("/weekly-revenue", getWeeklyRevenue);
+router.get("/weekly-revenue", verifyToken,adminOnly,  getWeeklyRevenue);
 router.get("/", getAllPaymentData);
 router.get("/:id", getPaymentById);
 // ✅ Direct Stripe PaymentIntent
@@ -49,7 +51,7 @@ router.post("/create-payment-intent", async (req, res) => {
 // ✅ Dummy Save Payment
 router.post("/save-payment", async (req, res) => {
   try {
-    console.log("💾 Payment Saved:", req.body);
+    // console.log("💾 Payment Saved:", req.body);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to save payment" });

@@ -9,6 +9,12 @@ const SHOWTIMES = [
   { id: 'showtime-3', time: '09:00 PM', price: 180 },
 ]
 
+//  const SHOWTIMES = [
+//   { id: 'showtime-1', time: '10:30 PM', price: 150 },
+//   { id: 'showtime-2', time: '06:00 PM', price: 200 },
+//   { id: 'showtime-3', time: '09:00 PM', price: 180 },
+// ]
+
 // ✅ Get Available Showtimes
 const getAvailableShowtimes = async (req, res) => {
   try {
@@ -109,7 +115,7 @@ const autoCleanupPastBookings = async () => {
     })
     
     if (result.deletedCount > 0) {
-      console.log(`🗑️ Cleanup: Deleted ${result.deletedCount} past bookings`)
+      // console.log(`🗑️ Cleanup: Deleted ${result.deletedCount} past bookings`)
     }
   } catch (error) {
     console.error('❌ Cleanup error:', error)

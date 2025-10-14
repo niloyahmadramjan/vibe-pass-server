@@ -50,6 +50,7 @@ const confirmPayment = async (req, res) => {
       showTime,
       selectedSeats,
       screen,
+ 
     } = paymentData
 
     // 1. Stripe Payment
@@ -87,6 +88,22 @@ const confirmPayment = async (req, res) => {
         provider: 'stripe',
         providerPaymentId: transactionId,
       })
+    }
+
+
+
+    // 3️⃣ Update Booking Status (✅ auto confirm)
+    if (bookingId) {
+      await Booking.findByIdAndUpdate(
+        bookingId,
+        {
+          $set: {
+            status: "confirmed",
+            paymentStatus: "paid",
+          },
+        },
+        { new: true }
+      );
     }
 
     // 3. Email পাঠানো
@@ -268,26 +285,7 @@ const getAllPaymentData = async (req, res) => {
   }
 }
 
-// ✅ Get Weekly Revenue
-// const getWeeklyRevenue = async (req, res) => {
-//   try {
-//     const oneWeekAgo = new Date();
-//     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-//     const payments = await Payment.find({
-//       status: "paid",
-//       updatedAt: { $gte: oneWeekAgo },
-//     });
-
-//     const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
-
-//     res.json({ totalRevenue, count: payments.length });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
-//  Get Weekly Revenue
 
 const getWeeklyRevenue = async (req, res) => {
   try {

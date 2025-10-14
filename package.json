@@ -14,20 +14,25 @@
   "type": "commonjs",
   "dependencies": {
     "@stripe/stripe-js": "^7.9.0",
+    "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "file-type": "^21.0.0",
     "form-data": "^4.0.4",
+    "google-auth-library": "^10.4.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.19.0",
     "mongoose": "^8.18.2",
-    "nodemailer": "^7.0.6",
+    "next-auth": "^4.24.11",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^6.9.8",
     "puppeteer": "^24.22.3",
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.1",
-    "stripe": "^18.5.0"
+    "stripe": "^18.5.0",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
