@@ -24,6 +24,9 @@ const showtimeRoutes = require("./routes/showtimeRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const events = require("./routes/eventRoutes");
 const newsLetterRoutes = require("./routes/newsLetterRoutes");
+const rewardRoutes = require("./routes/rewardRoutes");
+
+
 // =========================
 // ⚙️ App Configuration
 // =========================
@@ -109,6 +112,9 @@ app.use("/api/newsletter", newsLetterRoutes);
 
 // Coupons
 app.use("/api/coupons", couponRoutes);
+
+// rewards
+app.use("/api/rewards", rewardRoutes);
 
 // User (CRUD Operations)
 app.use("/api/user", userRoutes);
