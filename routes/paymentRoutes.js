@@ -14,14 +14,14 @@ const Stripe = require("stripe");
 const router = express.Router();
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
-// ✅ Controller-based routes
+//  Controller-based routes
 router.post("/", initiatePayment);
 router.post("/confirm-payment", confirmPayment);
 router.get("/user", getPaymentsByEmail);
 router.get("/weekly-revenue", verifyToken,adminOnly,  getWeeklyRevenue);
 router.get("/", getAllPaymentData);
 router.get("/:id", getPaymentById);
-// ✅ Direct Stripe PaymentIntent
+// Direct Stripe PaymentIntent
 router.post("/create-payment-intent", async (req, res) => {
   try {
     const { amount } = req.body;

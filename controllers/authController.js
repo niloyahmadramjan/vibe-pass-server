@@ -1,13 +1,16 @@
 const bcrypt = require('bcryptjs')
+const dotenv = require("dotenv");
 const jwt = require('jsonwebtoken')
 const User = require('../models/user.js')
 const sendEmail = require('../utils/sendEmail.js')
+
+dotenv.config();
 
 // Temporary in-memory OTP store (better to use Redis/DB in production)
 let otpStore = {}
 let verifiedEmails = {} // to track verified OTPs
 
-const JWT_SECRET = process.env.JWT_SECRET || 'default_secret_key'
+const JWT_SECRET = process.env.JWT_SECRET
 
 // Step 1: Send OTP
 const sendOtp = async (req, res) => {

@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken')
-const { getToken } = require('next-auth/jwt')
 
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers['authorization']
@@ -14,10 +13,8 @@ const verifyToken = async (req, res, next) => {
     console.log('✅ Verified Custom JWT:', decoded)
     return next()
   } catch (err1) {
-    // 🔵 2️⃣ Try verifying NextAuth token manually
+    // 🔵 2️ Try verifying NextAuth token manually
     try {
-      // Instead of using getToken (which expects Next.js req),
-      // decode and verify manually using NEXTAUTH_SECRET
       const decodedNextAuth = jwt.verify(token, process.env.NEXTAUTH_SECRET)
 
       if (!decodedNextAuth) {
