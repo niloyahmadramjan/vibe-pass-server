@@ -36,7 +36,7 @@ cron.schedule('*/5 * * * *', async () => {
       const diffMins = (showDateTime - now) / (1000 * 60)
 
       // Within 1-hour range (tolerance: 58–62 minutes)
-      return diffMins >= 58 && diffMins <= 62
+      return diffMins >= 58 && diffMins <= 62;
     })
 
     if (!bookingsToRemind.length) return

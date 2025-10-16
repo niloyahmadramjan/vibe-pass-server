@@ -272,49 +272,26 @@ const deleteUser = async (req, res) => {
 
 
 // Update user by ID
- const updateUser = async (req, res) => {
+const updateUser = async (req, res) => {
   try {
-    const { id } = req.params;
-    const updateData = req.body;
+    const updates = { ...req.body };
 
-    const updatedUser = await user.findByIdAndUpdate(
-      id,
-      updateData,
+    if (updates.phone === "" || updates.phone === undefined || updates.phone === null) {
+      delete updates.phone;
+    }
+
+    const updatedUser = await user.findOneAndUpdate(
+      { _id: req.params.id },
+      updates,
       { new: true, runValidators: true }
-    ).select('-password');
+    );
 
-    if (!updatedUser) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'User updated successfully',
-      data: updatedUser
-    });
-
+    res.status(200).json(updatedUser);
   } catch (error) {
-    console.error('Update user error:', error);
-
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        errors
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
+    console.error("Update user error:", error);
+    res.status(500).json({ message: "Failed to update user", error });
   }
 };
-
 
 // Export functions
 module.exports = {

@@ -1,3 +1,4 @@
+
 // =========================
 // 📦 Import Dependencies
 // =========================
@@ -24,6 +25,7 @@ const movieRoutes = require('./routes/movieRoutes')
 const showtimeRoutes = require('./routes/showtimeRoutes')
 const couponRoutes = require('./routes/couponRoutes')
 const events = require('./routes/eventRoutes')
+const chatRoutes = require('./routes/chatRoutes')
 
 // =========================
 // ⚙️ App Configuration
@@ -36,11 +38,21 @@ const port = process.env.PORT || 5000
 const server = http.createServer(app)
 
 // =========================
+// 🧱 Middleware
+// =========================
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://vibe-pass.vercel.app'],
+  credentials: true,
+}))
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
+// =========================
 // ⚡ Socket.io Setup
 // =========================
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: ['http://localhost:3000', 'https://vibe-pass.vercel.app'],
     credentials: true,
   },
 })
@@ -48,7 +60,9 @@ const io = new Server(server, {
 // Make io globally accessible
 app.set('io', io)
 
-// Handle Socket.io events
+// =========================
+// 🎬 Booking-related Socket Logic
+// =========================
 io.on('connection', (socket) => {
   console.log('⚡ User connected:', socket.id)
 
@@ -66,12 +80,9 @@ io.on('connection', (socket) => {
 })
 
 // =========================
-// 🧱 Middleware
+// 💬 Chat Socket Integration
 // =========================
-app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-
+require('./services/chatSocket')(io)
 
 // =========================
 // 🌐 Base Route
@@ -83,46 +94,27 @@ app.get('/', (req, res) => {
 // =========================
 // 🧭 API Routes
 // =========================
-
-// Auth
 app.use('/api/auth', authRoutes)
-
-// Booking
 app.use('/api/ticket', bookingRoutes)
-
-// Payments
 app.use('/api/payments', paymentRoutes)
 app.use('/api/payments/sslcommerz', sslpaymentRoutes)
-
-// PDF Generation
 app.use('/api/generate-ticket-pdf', pdfRoutes)
-
-// Hall Distribution
 app.use('/api/hall-distribution', hallRoutes)
-
-// Movies
-// app.use('/api/movies', movieRoutes)
-app.use("/api/movies", movieRoutes);
-// Showtimes
+app.use('/api/movies', movieRoutes)
 app.use('/api/showtime', showtimeRoutes)
-// Events
-app.use('/api/events',events)
-
-// Coupons
+app.use('/api/events', events)
 app.use('/api/coupons', couponRoutes)
-
-// User (CRUD Operations)
 app.use('/api/user', userRoutes)
-
+app.use('/api/chat', chatRoutes)
 
 // =========================
 // 🗄️ Database + Server Start
 // =========================
 connectDB()
-// user get a email before 1 hour
-require("./controllers/reminderController")
+require('./controllers/reminderController')
+
 server.listen(port, () => {
   console.log(`✅ Express server running at: http://localhost:${port}`)
-  // console.log('🔌 Socket.io ready for real-time connections')
   console.log('🔌 Socket.io ready for real-time connections')
+  console.log('💬 Chat system initialized')
 })
