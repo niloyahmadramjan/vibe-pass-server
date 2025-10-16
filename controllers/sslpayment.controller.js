@@ -6,7 +6,7 @@ const Payment = require('../models/Payment')
 const initiatePayment = async (req, res) => {
   try {
     const {
-      transactionId, // optional from frontend, will be replaced by generated one
+      transactionId, 
       amount,
       status,
       bookingId,
