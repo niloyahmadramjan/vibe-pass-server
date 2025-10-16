@@ -3,8 +3,13 @@ const Booking = require('../models/Booking')
 const TOTAL_SEATS = 100
 
 // ✅ Fixed 3 Showtimes
+// const SHOWTIMES = [
+//   { id: 'showtime-1', time: '03:00 PM', price: 150 },
+//   { id: 'showtime-2', time: '06:00 PM', price: 200 },
+//   { id: 'showtime-3', time: '09:00 PM', price: 180 },
+// ]
 const SHOWTIMES = [
-  { id: 'showtime-1', time: '03:00 PM', price: 150 },
+  { id: 'showtime-1', time: '04:00PM', price: 150 },
   { id: 'showtime-2', time: '06:00 PM', price: 200 },
   { id: 'showtime-3', time: '09:00 PM', price: 180 },
 ]
