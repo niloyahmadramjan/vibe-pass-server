@@ -29,6 +29,7 @@ const couponRoutes = require('./routes/couponRoutes')
 const events = require('./routes/eventRoutes')
 const newsLetterRoutes = require('./routes/newsLetterRoutes')
 const rewardRoutes = require('./routes/rewardRoutes')
+const chatRoutes= require('./routes/chatRoutes')
 require('./controllers/reminderController')
 
 
@@ -110,17 +111,7 @@ app.get('/', (req, res) => {
 // =========================
 // 🧭 API Routes
 // =========================
-// app.use('/api/auth', authRoutes)
-// app.use('/api/ticket', bookingRoutes)
-// app.use('/api/payments', paymentRoutes)
-// app.use('/api/payments/sslcommerz', sslpaymentRoutes)
-// app.use('/api/generate-ticket-pdf', pdfRoutes)
-// app.use('/api/hall-distribution', hallRoutes)
-// app.use('/api/movies', movieRoutes)
-// app.use('/api/showtime', showtimeRoutes)
-// app.use('/api/events', events)
-// app.use('/api/coupons', couponRoutes)
-// app.use('/api/user', userRoutes)
+
 
 
 // Auth
