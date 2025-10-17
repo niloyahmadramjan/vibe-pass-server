@@ -1,3 +1,6 @@
+// ======================================================
+// 🚀 VibePass Server Entry Point
+// ======================================================
 
 // =========================
 // 📦 Import Dependencies
@@ -13,12 +16,10 @@ const { Server } = require('socket.io')
 // =========================
 const connectDB = require('./config/db')
 
-// 🛣️ Import Routes
+// 🛣️ Import Route Files
 const authRoutes = require('./routes/authRoutes')
 const paymentRoutes = require('./routes/paymentRoutes')
-
 const sslpaymentRoutes = require('./routes/sslpaymentRoutes')
-
 const bookingRoutes = require('./routes/bookingRoutes')
 const hallRoutes = require('./routes/hallRoutes')
 const pdfRoutes = require('./routes/pdfRoutes')
@@ -26,12 +27,13 @@ const userRoutes = require('./routes/userRoutes')
 const movieRoutes = require('./routes/movieRoutes')
 const showtimeRoutes = require('./routes/showtimeRoutes')
 const couponRoutes = require('./routes/couponRoutes')
-const events = require('./routes/eventRoutes')
+const eventRoutes = require('./routes/eventRoutes')
 const newsLetterRoutes = require('./routes/newsLetterRoutes')
 const rewardRoutes = require('./routes/rewardRoutes')
-const chatRoutes= require('./routes/chatRoutes')
-require('./controllers/reminderController')
+const chatRoutes = require('./routes/chatRoutes')
 
+// 🧠 Background Controllers
+require('./controllers/reminderController')
 
 // =========================
 // ⚙️ App Configuration
@@ -40,15 +42,24 @@ dotenv.config()
 const app = express()
 const port = process.env.PORT || 5000
 
-// Create HTTP server for Socket.io
+// Create HTTP server (required for Socket.io)
 const server = http.createServer(app)
 
 // =========================
-// 🧱 Middleware
+// 🧱 Middleware Setup
 // =========================
 app.use(
-  cors()
+  cors({
+    origin: [
+      'https://vibe-pass-8z9z.onrender.com',
+      'https://vibe-pass.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:5000',
+    ],
+    credentials: true,
+  })
 )
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
@@ -57,112 +68,102 @@ app.use(express.urlencoded({ extended: true }))
 // =========================
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5000',
+    origin: [
+      'https://vibe-pass-8z9z.onrender.com',
+      'https://vibe-pass.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:5000',
+    ],
     credentials: true,
   },
 })
 
-// Make io globally accessible
+// Make io globally accessible through app
 app.set('io', io)
 
 // =========================
-// 🎬 Booking-related Socket Logic
+// 🎬 Booking-Related Socket Logic
 // =========================
-
-// Handle Socket.io events
 io.on('connection', (socket) => {
   console.log('⚡ User connected:', socket.id)
 
-  // Join a specific movie + date + showtime room
+  // 🏷️ Join a room specific to a movie + date + showtime
   socket.on('joinRoom', ({ movieId, showDate, showtime }) => {
     const room = `${movieId}-${showDate}-${showtime}`
     socket.join(room)
     console.log(`👉 ${socket.id} joined room: ${room}`)
   })
 
-  // Handle disconnect
+  // ❌ Handle user disconnect
   socket.on('disconnect', () => {
     console.log('❌ User disconnected:', socket.id)
   })
 })
 
 // =========================
-// 💬 Chat Socket Integration
+// 💬 Real-Time Chat Socket
 // =========================
-
-
 require('./services/chatSocket')(io)
 
-
-
-app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-
-
 // =========================
-// 🌐 Base Route
+// 🌐 Base Test Route
 // =========================
 app.get('/', (req, res) => {
   res.send('🚀 VibePass Server is running smoothly...')
 })
 
 // =========================
-// 🧭 API Routes
+// 🧭 API Route Registration
 // =========================
 
-
-
-// Auth
+// 🔐 Authentication
 app.use('/api/auth', authRoutes)
 
-// Booking
+// 🎟️ Ticket Booking
 app.use('/api/ticket', bookingRoutes)
 
-// Payments strip
+// 💳 Payments
 app.use('/api/payments', paymentRoutes)
-// payment ssl commerz
+
+// 💰 SSLCommerz Payments
 app.use('/api/payments/sslcommerz', sslpaymentRoutes)
 
-// PDF Generation
+// 🧾 PDF Ticket Generation
 app.use('/api/generate-ticket-pdf', pdfRoutes)
 
-// Hall Distribution
+// 🏢 Hall Distribution
 app.use('/api/hall-distribution', hallRoutes)
 
-// Movies
+// 🎬 Movies
 app.use('/api/movies', movieRoutes)
 
-// Showtimes
+// ⏰ Showtimes
 app.use('/api/showtime', showtimeRoutes)
-// Events
-app.use('/api/events', events)
 
-// newsLetter
+// 🎉 Events
+app.use('/api/events', eventRoutes)
+
+// 📰 Newsletter
 app.use('/api/newsletter', newsLetterRoutes)
 
-// Coupons
+// 🎟️ Coupons
 app.use('/api/coupons', couponRoutes)
 
-// rewards
+// 🏆 Rewards
 app.use('/api/rewards', rewardRoutes)
 
-// User (CRUD Operations)
+// 👤 User Management
+app.use('/api/user', userRoutes)
 
-app.use("/api/user", userRoutes);
-// real time chat system
+// 💬 Chat (Real-time Messaging)
 app.use('/api/chat', chatRoutes)
 
-
-
 // =========================
-// 🗄️ Database + Server Start
+// 🗄️ Database + Server Startup
 // =========================
-
 connectDB()
 
 server.listen(port, () => {
   console.log(`✅ Express server running at: http://localhost:${port}`)
   console.log('🔌 Socket.io ready for real-time connections')
 })
-
