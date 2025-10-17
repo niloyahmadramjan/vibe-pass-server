@@ -32,10 +32,16 @@ const couponSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+    active: { type: Boolean, default: true },
     active: {
         type: Boolean,
         default: true,
     },
+    description:{
+        type:String,
+        default:true
+    }
+    
 }, { timestamps: true });
 
 module.exports = mongoose.model("Coupon", couponSchema);
