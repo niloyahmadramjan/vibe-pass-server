@@ -10,7 +10,7 @@ router.post("/add", verifyToken, adminOnly, createCoupon);
 // User applies a coupon..........................................................
 router.post("/apply",verifyToken, applyCoupon);
 // get coupons
-router.get("/", verifyToken, adminOnly, getCoupons);
+router.get("/", getCoupons);
 // delete Coupon
 router.delete("/:id", verifyToken, deleteCoupon);
 router.put("/:id", verifyToken,updateCoupon)

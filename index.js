@@ -1,3 +1,4 @@
+
 // =========================
 // 📦 Import Dependencies
 // =========================
@@ -15,6 +16,7 @@ const connectDB = require('./config/db')
 // 🛣️ Import Routes
 const authRoutes = require('./routes/authRoutes')
 const paymentRoutes = require('./routes/paymentRoutes')
+
 const sslpaymentRoutes = require('./routes/sslpaymentRoutes')
 
 const bookingRoutes = require('./routes/bookingRoutes')
@@ -27,6 +29,9 @@ const couponRoutes = require('./routes/couponRoutes')
 const events = require('./routes/eventRoutes')
 const newsLetterRoutes = require('./routes/newsLetterRoutes')
 const rewardRoutes = require('./routes/rewardRoutes')
+const chatRoutes= require('./routes/chatRoutes')
+require('./controllers/reminderController')
+
 
 // =========================
 // ⚙️ App Configuration
@@ -37,6 +42,16 @@ const port = process.env.PORT || 5000
 
 // Create HTTP server for Socket.io
 const server = http.createServer(app)
+
+// =========================
+// 🧱 Middleware
+// =========================
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://vibe-pass.vercel.app'],
+  credentials: true,
+}))
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
 // =========================
 // ⚡ Socket.io Setup
@@ -50,6 +65,10 @@ const io = new Server(server, {
 
 // Make io globally accessible
 app.set('io', io)
+
+// =========================
+// 🎬 Booking-related Socket Logic
+// =========================
 
 // Handle Socket.io events
 io.on('connection', (socket) => {
@@ -69,11 +88,18 @@ io.on('connection', (socket) => {
 })
 
 // =========================
-// 🧱 Middleware
+// 💬 Chat Socket Integration
 // =========================
+
+
+require('./services/chatSocket')(io)
+
+
+
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
 
 // =========================
 // 🌐 Base Route
@@ -85,6 +111,8 @@ app.get('/', (req, res) => {
 // =========================
 // 🧭 API Routes
 // =========================
+
+
 
 // Auth
 app.use('/api/auth', authRoutes)
@@ -121,14 +149,21 @@ app.use('/api/coupons', couponRoutes)
 app.use('/api/rewards', rewardRoutes)
 
 // User (CRUD Operations)
-app.use('/api/user', userRoutes)
+
+app.use("/api/user", userRoutes);
+// real time chat system
+app.use('/api/chat', chatRoutes)
+
+
 
 // =========================
 // 🗄️ Database + Server Start
 // =========================
+
 connectDB()
 
 server.listen(port, () => {
   console.log(`✅ Express server running at: http://localhost:${port}`)
   console.log('🔌 Socket.io ready for real-time connections')
 })
+
