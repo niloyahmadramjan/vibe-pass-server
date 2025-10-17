@@ -11,15 +11,41 @@ const createCoupon = async (req, res) => {
     }
 };
 
-// Apply coupon
+
+
 const applyCoupon = async (req, res) => {
     const { code, totalAmount } = req.body;
+    
     try {
         const coupon = await Coupon.findOne({ code, active: true });
-        if (!coupon) return res.status(404).json({ success: false, message: "Invalid coupon" });
-        if (coupon.expiryDate < new Date()) return res.status(400).json({ success: false, message: "Coupon expired" });
-        if (coupon.usedCount >= coupon.usageLimit) return res.status(400).json({ success: false, message: "Coupon usage limit reached" });
-        if (totalAmount < coupon.minAmount) return res.status(400).json({ success: false, message: `Minimum amount ${coupon.minAmount} required` });
+        
+        if (!coupon) {
+            return res.status(404).json({ 
+                success: false, 
+                error: "Invalid coupon code" // ✅ Changed from 'message' to 'error'
+            });
+        }
+        
+        if (coupon.expiryDate < new Date()) {
+            return res.status(400).json({ 
+                success: false, 
+                error: "Coupon has expired" 
+            });
+        }
+        
+        if (coupon.usedCount >= coupon.usageLimit) {
+            return res.status(400).json({ 
+                success: false, 
+                error: "Coupon usage limit reached" 
+            });
+        }
+        
+        if (totalAmount < coupon.minAmount) {
+            return res.status(400).json({ 
+                success: false, 
+                error: `Minimum amount ৳${coupon.minAmount} required` 
+            });
+        }
 
         let discount = 0;
         if (coupon.discountType === "percentage") {
@@ -28,10 +54,20 @@ const applyCoupon = async (req, res) => {
             discount = coupon.discountValue;
         }
 
-        res.status(200).json({ success: true, discount });
+        const finalAmount = totalAmount - discount; // ✅ Calculate final amount
+
+        res.status(200).json({ 
+            success: true, 
+            discount,
+            finalAmount, // ✅ Added
+            couponCode: coupon.code // ✅ Added
+        });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: "Failed to apply coupon" });
+        console.error("Apply Coupon Error:", err);
+        res.status(500).json({ 
+            success: false, 
+            error: "Failed to apply coupon" // ✅ Changed from 'message'
+        });
     }
 };
 

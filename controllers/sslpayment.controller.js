@@ -1,12 +1,13 @@
 const axios = require('axios')
 const { v4: uuidv4 } = require('uuid')
 const Payment = require('../models/Payment')
+const Booking = require('../models/Booking')
 
 // Initiate SSLCommerz Payment
 const initiatePayment = async (req, res) => {
   try {
     const {
-      transactionId, 
+      transactionId,
       amount,
       status,
       bookingId,
@@ -102,6 +103,10 @@ const paymentSuccess = async (req, res) => {
     const paymentInfo = req.body
 
     if (paymentInfo.status === 'VALID') {
+      // ✅ Get bookingId from paymentInfo (value_a) which we set during initiation
+      const bookingId = paymentInfo.value_a
+      const transactionId = paymentInfo.tran_id
+
       const updatedPayment = await Payment.findOneAndUpdate(
         { transactionId: paymentInfo.tran_id },
         {
@@ -113,6 +118,23 @@ const paymentSuccess = async (req, res) => {
         },
         { new: true }
       )
+
+      // ✅ Update booking status to confirmed and mark as paid
+      const updatedBooking = await Booking.findByIdAndUpdate(
+        bookingId,
+        {
+          $set: {
+            status: 'confirmed',
+            paymentStatus: 'paid',
+            paymentId: transactionId,
+          },
+        },
+        { new: true }
+      )
+
+      if (!updatedBooking) {
+        return res.status(404).json({ message: 'Booking not found' })
+      }
 
       return res.redirect(
         `${process.env.REDIRECT_CLIENTS}/payment/status?status=success&paymentId=${updatedPayment?._id}`
@@ -136,6 +158,9 @@ const paymentFail = async (req, res) => {
   try {
     const paymentInfo = req.body
 
+    // ✅ Get bookingId from paymentInfo (value_a)
+    const bookingId = paymentInfo.value_a
+
     const updatedPayment = await Payment.findOneAndUpdate(
       { transactionId: paymentInfo.tran_id },
       {
@@ -146,6 +171,15 @@ const paymentFail = async (req, res) => {
       },
       { new: true }
     )
+
+    // ✅ Update booking status to failed payment
+    if (bookingId) {
+      await Booking.findByIdAndUpdate(bookingId, {
+        $set: {
+          paymentStatus: 'failed',
+        },
+      })
+    }
 
     return res.redirect(
       `${process.env.REDIRECT_CLIENTS}/payment/status?status=fail&paymentId=${updatedPayment?._id}`
@@ -163,16 +197,29 @@ const paymentCancel = async (req, res) => {
   try {
     const paymentInfo = req.body
 
+    // ✅ Get bookingId from paymentInfo (value_a)
+    const bookingId = paymentInfo.value_a
+
     const updatedPayment = await Payment.findOneAndUpdate(
       { transactionId: paymentInfo.tran_id },
       {
         $set: {
-          status: 'failed',
+          status: 'cancelled',
           providerPaymentId: paymentInfo.val_id,
         },
       },
       { new: true }
     )
+
+    // ✅ Update booking status to cancelled
+    if (bookingId) {
+      await Booking.findByIdAndUpdate(bookingId, {
+        $set: {
+          paymentStatus: 'cancelled',
+          status: 'cancelled',
+        },
+      })
+    }
 
     return res.redirect(
       `${process.env.REDIRECT_CLIENTS}/payment/status?status=cancel&paymentId=${updatedPayment?._id}`

@@ -47,10 +47,7 @@ const server = http.createServer(app)
 // 🧱 Middleware
 // =========================
 app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true,
-  })
+  cors()
 )
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -60,7 +57,7 @@ app.use(express.urlencoded({ extended: true }))
 // =========================
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL || 'http://localhost:5000',
     credentials: true,
   },
 })
