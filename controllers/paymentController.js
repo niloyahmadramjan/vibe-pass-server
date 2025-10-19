@@ -50,7 +50,6 @@ const confirmPayment = async (req, res) => {
       showTime,
       selectedSeats,
       screen,
- 
     } = paymentData
 
     // 1. Stripe Payment
@@ -90,20 +89,18 @@ const confirmPayment = async (req, res) => {
       })
     }
 
-
-
     // 3️⃣ Update Booking Status (✅ auto confirm)
     if (bookingId) {
       await Booking.findByIdAndUpdate(
         bookingId,
         {
           $set: {
-            status: "confirmed",
-            paymentStatus: "paid",
+            status: 'confirmed',
+            paymentStatus: 'paid',
           },
         },
         { new: true }
-      );
+      )
     }
 
     // 3. Email পাঠানো
@@ -284,8 +281,6 @@ const getAllPaymentData = async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 }
-
-
 
 const getWeeklyRevenue = async (req, res) => {
   try {

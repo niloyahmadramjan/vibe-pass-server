@@ -7,7 +7,7 @@ const createEvent = async (req, res) => {
         // console.log("📥 Received event data:", req.body);
         // console.log("👤 Request user object:", req.user); // This might be undefined
 
-        // ✅ FIX: Don't rely on req.user, use the createdBy from request body
+        //  FIX: Don't rely on req.user, use the createdBy from request body
         const { createdBy, userEmail, userName, ...eventData } = req.body;
 
         // console.log("👤 User from client:", { createdBy, userEmail, userName });
@@ -23,7 +23,7 @@ const createEvent = async (req, res) => {
             });
         }
 
-        // ✅ FIX: Prepare event data without relying on req.user
+        //  FIX: Prepare event data without relying on req.user
         const finalEventData = {
             title: req.body.title,
             description: req.body.description,
@@ -41,7 +41,7 @@ const createEvent = async (req, res) => {
             bookingOpen: req.body.bookingOpen !== undefined ? req.body.bookingOpen : true,
         };
 
-        // ✅ FIX: Add createdBy only if it's provided and valid
+        //  FIX: Add createdBy only if it's provided and valid
         if (createdBy && createdBy !== 'undefined' && createdBy !== 'null') {
             // Verify the user exists in database
             try {
@@ -71,7 +71,7 @@ const createEvent = async (req, res) => {
         const event = new Event(finalEventData);
         const savedEvent = await event.save();
 
-        // console.log("✅ Event created successfully with ID:", savedEvent._id);
+        // console.log(" Event created successfully with ID:", savedEvent._id);
 
         res.status(201).json({
             success: true,
