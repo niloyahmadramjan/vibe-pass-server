@@ -1,4 +1,3 @@
-
 // =========================
 // 📦 Import Dependencies
 // =========================
@@ -29,9 +28,8 @@ const couponRoutes = require('./routes/couponRoutes')
 const events = require('./routes/eventRoutes')
 const newsLetterRoutes = require('./routes/newsLetterRoutes')
 const rewardRoutes = require('./routes/rewardRoutes')
-const chatRoutes= require('./routes/chatRoutes')
+const chatRoutes = require('./routes/chatRoutes')
 require('./controllers/reminderController')
-
 
 // =========================
 // ⚙️ App Configuration
@@ -46,9 +44,7 @@ const server = http.createServer(app)
 // =========================
 // 🧱 Middleware
 // =========================
-app.use(
-  cors()
-)
+app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
@@ -90,15 +86,11 @@ io.on('connection', (socket) => {
 // 💬 Chat Socket Integration
 // =========================
 
-
 require('./services/chatSocket')(io)
-
-
 
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-
 
 // =========================
 // 🌐 Base Route
@@ -110,8 +102,6 @@ app.get('/', (req, res) => {
 // =========================
 // 🧭 API Routes
 // =========================
-
-
 
 // Auth
 app.use('/api/auth', authRoutes)
@@ -149,11 +139,9 @@ app.use('/api/rewards', rewardRoutes)
 
 // User (CRUD Operations)
 
-app.use("/api/user", userRoutes);
+app.use('/api/user', userRoutes)
 // real time chat system
 app.use('/api/chat', chatRoutes)
-
-
 
 // =========================
 // 🗄️ Database + Server Start
@@ -165,4 +153,3 @@ server.listen(port, () => {
   console.log(`✅ Express server running at: http://localhost:${port}`)
   console.log('🔌 Socket.io ready for real-time connections')
 })
-
