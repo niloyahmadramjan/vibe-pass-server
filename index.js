@@ -15,9 +15,7 @@ const connectDB = require('./config/db')
 // 🛣️ Import Routes
 const authRoutes = require('./routes/authRoutes')
 const paymentRoutes = require('./routes/paymentRoutes')
-
 const sslpaymentRoutes = require('./routes/sslpaymentRoutes')
-
 const bookingRoutes = require('./routes/bookingRoutes')
 const hallRoutes = require('./routes/hallRoutes')
 const pdfRoutes = require('./routes/pdfRoutes')
@@ -142,6 +140,7 @@ app.use('/api/rewards', rewardRoutes)
 app.use('/api/user', userRoutes)
 // real time chat system
 app.use('/api/chat', chatRoutes)
+
 
 // =========================
 // 🗄️ Database + Server Start
