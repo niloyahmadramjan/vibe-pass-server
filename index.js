@@ -28,6 +28,7 @@ const newsLetterRoutes = require('./routes/newsLetterRoutes')
 const rewardRoutes = require('./routes/rewardRoutes')
 const chatRoutes = require('./routes/chatRoutes')
 require('./controllers/reminderController')
+const verifyqr = require('./routes/verify.qr.routes')
 
 // =========================
 // ⚙️ App Configuration
@@ -140,6 +141,9 @@ app.use('/api/rewards', rewardRoutes)
 app.use('/api/user', userRoutes)
 // real time chat system
 app.use('/api/chat', chatRoutes)
+
+// Verify QR code
+app.use('/api/verify-qr', verifyqr)
 
 
 // =========================
