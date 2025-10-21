@@ -28,6 +28,7 @@ const newsLetterRoutes = require('./routes/newsLetterRoutes')
 const rewardRoutes = require('./routes/rewardRoutes')
 const chatRoutes = require('./routes/chatRoutes')
 require('./controllers/reminderController')
+require("./controllers/movieScheduler")
 const verifyqr = require('./routes/verify.qr.routes')
 
 // =========================
