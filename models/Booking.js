@@ -78,6 +78,12 @@ const bookingSchema = new Schema(
       enum: ['unpaid', 'paid', 'failed', 'refunded', 'partial'],
       default: 'unpaid',
     },
+    qrSignature: {
+      type: String,
+      default: null,
+    },
+    lastQRUpdate: { type: Date },
+
     // ✅ ADD THESE 2 NEW FIELDS BELOW
     expiresAt: {
       type: Date,
@@ -92,7 +98,7 @@ const bookingSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    reminderSentOneHour: { type: Boolean, default: false }
+    reminderSentOneHour: { type: Boolean, default: false },
   },
   {
     timestamps: true,
