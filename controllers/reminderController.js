@@ -11,7 +11,7 @@ require('dotenv').config()
 
 cron.schedule('*/5 * * * *', async () => {
   try {
-    console.log('⏰ [Reminders] Checking for 1-hour-before reminders...')
+    // console.log('⏰ [Reminders] Checking for 1-hour-before reminders...')
 
     const now = new Date()
 
@@ -255,9 +255,9 @@ cron.schedule('*/5 * * * *', async () => {
       booking.reminderSentOneHour = true
       await booking.save()
 
-      console.log(
-        `📩 1-hour reminder sent to ${booking.userEmail} for "${booking.movieTitle}"`
-      )
+      // console.log(
+      //   `📩 1-hour reminder sent to ${booking.userEmail} for "${booking.movieTitle}"`
+      // )
     }
   } catch (err) {
     console.error('❌ Error in reminder cron:', err)

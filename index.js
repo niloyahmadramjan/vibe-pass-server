@@ -6,10 +6,6 @@ const cors = require('cors')
 const dotenv = require('dotenv')
 const http = require('http')
 const { Server } = require('socket.io')
-
-// =========================
-// 🧩 Import Custom Modules
-// =========================
 const connectDB = require('./config/db')
 
 // 🛣️ Import Routes
@@ -27,9 +23,11 @@ const events = require('./routes/eventRoutes')
 const newsLetterRoutes = require('./routes/newsLetterRoutes')
 const rewardRoutes = require('./routes/rewardRoutes')
 const chatRoutes = require('./routes/chatRoutes')
-require('./controllers/reminderController')
-require("./controllers/movieScheduler")
 const verifyqr = require('./routes/verify.qr.routes')
+
+// Background controllers
+require('./controllers/reminderController')
+require('./controllers/movieScheduler')
 
 // =========================
 // ⚙️ App Configuration
@@ -53,7 +51,7 @@ app.use(express.urlencoded({ extended: true }))
 // =========================
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5000',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
   },
 })
@@ -64,33 +62,22 @@ app.set('io', io)
 // =========================
 // 🎬 Booking-related Socket Logic
 // =========================
-
-// Handle Socket.io events
 io.on('connection', (socket) => {
-  console.log('⚡ User connected:', socket.id)
-
   // Join a specific movie + date + showtime room
   socket.on('joinRoom', ({ movieId, showDate, showtime }) => {
     const room = `${movieId}-${showDate}-${showtime}`
     socket.join(room)
-    console.log(`👉 ${socket.id} joined room: ${room}`)
   })
 
-  // Handle disconnect
   socket.on('disconnect', () => {
-    console.log('❌ User disconnected:', socket.id)
+    // console.log('❌ User disconnected:', socket.id);
   })
 })
 
 // =========================
 // 💬 Chat Socket Integration
 // =========================
-
 require('./services/chatSocket')(io)
-
-app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
 
 // =========================
 // 🌐 Base Route
@@ -102,55 +89,25 @@ app.get('/', (req, res) => {
 // =========================
 // 🧭 API Routes
 // =========================
-
-// Auth
 app.use('/api/auth', authRoutes)
-
-// Booking
 app.use('/api/ticket', bookingRoutes)
-
-// Payments strip
 app.use('/api/payments', paymentRoutes)
-// payment ssl commerz
 app.use('/api/payments/sslcommerz', sslpaymentRoutes)
-
-// PDF Generation
 app.use('/api/generate-ticket-pdf', pdfRoutes)
-
-// Hall Distribution
 app.use('/api/hall-distribution', hallRoutes)
-
-// Movies
 app.use('/api/movies', movieRoutes)
-
-// Showtimes
 app.use('/api/showtime', showtimeRoutes)
-// Events
 app.use('/api/events', events)
-
-// newsLetter
 app.use('/api/newsletter', newsLetterRoutes)
-
-// Coupons
 app.use('/api/coupons', couponRoutes)
-
-// rewards
 app.use('/api/rewards', rewardRoutes)
-
-// User (CRUD Operations)
-
 app.use('/api/user', userRoutes)
-// real time chat system
 app.use('/api/chat', chatRoutes)
-
-// Verify QR code
 app.use('/api/verify-qr', verifyqr)
-
 
 // =========================
 // 🗄️ Database + Server Start
 // =========================
-
 connectDB()
 
 server.listen(port, () => {

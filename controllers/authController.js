@@ -1,10 +1,10 @@
 const bcrypt = require('bcryptjs')
-const dotenv = require("dotenv");
+const dotenv = require('dotenv')
 const jwt = require('jsonwebtoken')
 const User = require('../models/user.js')
 const sendEmail = require('../utils/sendEmail.js')
 
-dotenv.config();
+dotenv.config()
 
 // Temporary in-memory OTP store (better to use Redis/DB in production)
 let otpStore = {}
@@ -27,7 +27,7 @@ const sendOtp = async (req, res) => {
 
     // Send email with OTP
     await sendEmail(email, 'Your OTP Code', otp, name)
-    console.log(otp)
+    // console.log(otp)
 
     res.json({ success: true, message: 'OTP sent' })
   } catch (error) {
@@ -161,11 +161,6 @@ const socialLogin = async (req, res) => {
     res.status(500).json({ message: 'Server error during social login' })
   }
 }
-
-
-
-
-
 
 const login = async (req, res) => {
   try {
