@@ -1,6 +1,12 @@
 // controllers/chatController.js - SPECIFIC ADMIN ONLY
+<<<<<<< HEAD
 const ChatMessage = require('../models/chat')
 const AIChat = require('../models/aiChat')
+=======
+const ChatMessage = require('../models/chat');
+const AIChat = require("../models/aiChat");
+const Coupon = require("../models/Coupon");
+>>>>>>> ffb5b7a87556ba84e80dfc2d49498ee0774d5f7b
 // GET list of users who chatted with SPECIFIC ADMIN ONLY
 const getAllUsers = async (req, res) => {
   try {
@@ -159,14 +165,13 @@ const axios = require('axios')
 const { GoogleGenAI } = require('@google/genai')
 
 // Initialize Google Gemini client
+
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 })
 
-/**
- * 🔹 Function: Fetch and clean text content from a webpage (HTML → plain text)
- */
 const getWebsiteText = async (url) => {
+<<<<<<< HEAD
   try {
     const res = await axios.get(url)
     const html = res.data
@@ -185,12 +190,28 @@ const getWebsiteText = async (url) => {
     return 'Failed to fetch website content.'
   }
 }
+=======
+    try {
+        const res = await axios.get(url);
+        const html = res.data;
+        const cleanText = html
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+            .replace(/<[^>]*>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        return cleanText || "No readable text found.";
+    } catch (err) {
+        console.error(" Error fetching website:", err.message);
+        return "Failed to fetch website content.";
+    }
+};
+>>>>>>> ffb5b7a87556ba84e80dfc2d49498ee0774d5f7b
 
-/**
- * 🧠 AI Chat Response Controller
- * Fetches data from your VibePass website and uses Gemini AI to answer user queries.
- */
+
+// 🧠 AI Chat Response with Coupon Detection
 const aiChatResponse = async (req, res) => {
+<<<<<<< HEAD
   try {
     const { userMessage, userId, email } = req.body
 
@@ -210,11 +231,56 @@ const aiChatResponse = async (req, res) => {
     const prompt = `
 You are a helpful AI assistant for the movie ticket booking platform "VibePass".
 Below is the live website content to help you answer contextually:
+=======
+    try {
+        const { userMessage, userId, email } = req.body;
+        if (!userMessage) return res.status(400).json({ error: "Missing userMessage" });
+        if (!userId || !email) return res.status(400).json({ error: "Missing userId or email" });
+
+        const siteUrl = "https://vibe-pass.vercel.app/";
+        const siteText = await getWebsiteText(siteUrl);
+
+        // 🌟 STEP 1: Check if user is asking about coupons/offers
+        const lowerMsg = userMessage.toLowerCase(); const isCouponQuery = lowerMsg.includes("coupon") || lowerMsg.includes("offer") || lowerMsg.includes("discount");
+        let botReply = "";
+
+        if (isCouponQuery) {
+            console.log("🎟 User asked about coupons — fetching active coupons...");
+
+            const coupons = await Coupon.find({
+                active: true,
+                expiryDate: { $gte: new Date() },
+                $or: [
+                    { usageLimit: { $exists: false } },
+                    { usageLimit: null },
+                    { $expr: { $lt: ["$usedCount", "$usageLimit"] } }
+                ]
+            }).sort({ createdAt: -1 });
+
+            if (coupons.length === 0) {
+                botReply = "Sorry , there are no active coupons right now. Please check back later!";
+            } else {
+                botReply = ` Here are your active coupons:\n\n`;
+                coupons.forEach((c, i) => {
+                    botReply += `${i + 1}. Code: **${c.code}** — ${c.discountType === "percentage"
+                        ? `${c.discountValue}% OFF`
+                        : `৳${c.discountValue} OFF`
+                        }\n(Min purchase: ৳${c.minAmount}, Expires: ${new Date(c.expiryDate).toLocaleDateString()})\n\n`;
+                });
+            }
+        }
+ else {
+            // 🌟 STEP 2: Regular AI response using website + Gemini
+            const prompt = `
+You are a helpful assistant for "VibePass" movie ticket platform.
+Below is the website content for context:
+>>>>>>> ffb5b7a87556ba84e80dfc2d49498ee0774d5f7b
 
 ${siteText}
 
-User message: "${userMessage}"
+User said: "${userMessage}"
 
+<<<<<<< HEAD
 Provide a clear, friendly, and helpful answer.
 If the question is about movies, tickets, or bookings, give specific information based on the website.
 If not related, reply politely in general.
@@ -238,8 +304,35 @@ If not related, reply politely in general.
         email,
         messages: [],
       })
+=======
+If the question is about movies, tickets, or booking — answer from context.
+If it's general, respond politely and concisely.
+            `;
+
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: prompt,
+            });
+
+            botReply = response?.text?.trim() || "Sorry, I couldn’t generate a response.";
+        }
+
+        // 🌟 STEP 3: Save chat to DB
+        let chat = await AIChat.findOne({ userId, email });
+        if (!chat) chat = new AIChat({ userId, email, messages: [] });
+
+        chat.messages.push({ sender: "user", text: userMessage, timestamp: new Date() });
+        chat.messages.push({ sender: "bot", text: botReply, timestamp: new Date() });
+        await chat.save();
+
+        res.json({ reply: botReply });
+    } catch (err) {
+        console.error("❌ AI Chat Error:", err);
+        res.status(500).json({ error: "AI response failed." });
+>>>>>>> ffb5b7a87556ba84e80dfc2d49498ee0774d5f7b
     }
 
+<<<<<<< HEAD
     // Add user message
     chat.messages.push({
       sender: 'user',
@@ -264,6 +357,8 @@ If not related, reply politely in general.
   }
 }
 
+=======
+>>>>>>> ffb5b7a87556ba84e80dfc2d49498ee0774d5f7b
 const getAiChat = async (req, res) => {
   const { userId, email } = req.query
   if (!userId || !email)
