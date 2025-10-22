@@ -49,13 +49,13 @@ router.post("/create-payment-intent", async (req, res) => {
 });
 
 // ✅ Dummy Save Payment
-router.post("/save-payment", async (req, res) => {
-  try {
-    // console.log("💾 Payment Saved:", req.body);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to save payment" });
-  }
-});
+// router.post("/save-payment", async (req, res) => {
+//   try {
+//     // console.log("💾 Payment Saved:", req.body);
+//     res.json({ success: true });
+//   } catch (err) {
+//     res.status(500).json({ error: "Failed to save payment" });
+//   }
+// });
 
 module.exports = router;
