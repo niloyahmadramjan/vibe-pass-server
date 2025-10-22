@@ -1,10 +1,11 @@
 const express = require('express')
 const router = express.Router()
-const QRCode = require('qrcode')
 const PdfPrinter = require('pdfmake/src/printer')
 const Booking = require('../models/Booking')
 const path = require('path')
 const fs = require('fs')
+const { generateQRLink } = require('../utils/qrGenerator')
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
 
 // Fonts for pdfmake
 const fonts = {
@@ -80,27 +81,8 @@ router.post('/', async (req, res) => {
       .slice(-8)
       .toUpperCase()}`
 
-    
-// Generate QR code data with frontend URL
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
-
-
-
-
-const qrData = `${frontendUrl}/verify-qr/${qrSignature}`
-
-const qrDataUrl = await QRCode.toDataURL(qrData, {
-  errorCorrectionLevel: 'Q', // Highest error correction
-  margin: 3,
-  width: 160,
-  color: {
-    dark: '#000000',
-    light: '#FFFFFF',
-  },
-  // version: 5, // Specific version
-})
-
-
+      // QR DATA URL
+    const qrDataUrl = await generateQRLink(qrSignature)
 
     // Get VibePass logo (assuming logo is in public folder)
     const logoPath = path.join(process.cwd(), 'public', 'nav_log2.png')
@@ -122,749 +104,749 @@ const qrDataUrl = await QRCode.toDataURL(qrData, {
     showDateTime.setMinutes(parseInt(minutes))
 
     // PDF document definition - Full one page design
-  
-  const docDefinition = {
-    pageSize: 'A4',
-    pageMargins: [20, 20, 20, 20],
-    defaultStyle: {
-      font: 'Helvetica',
-      fontSize: 10,
-      lineHeight: 1.3,
-    },
-    content: [
-      // Header Section
-      {
-        stack: [
-          {
-            canvas: [
-              { type: 'rect', x: 0, y: 0, w: 595, h: 70, color: '#CC2027' },
-            ],
-          },
-          {
-            columns: [
-              {
-                width: '20%',
-                stack: logoBase64
-                  ? [
-                      {
-                        image: logoBase64,
-                        width: 80,
-                        height: 60,
-                        alignment: 'left',
-                        margin: [0, 0, 0, 0],
-                      },
-                    ]
-                  : [
-                      {
-                        text: 'VIBEPASS',
-                        fontSize: 12,
-                        bold: true,
-                        color: '#FFFFFF',
-                        alignment: 'left',
-                        margin: [15, 20, 0, 0],
-                      },
-                    ],
-              },
-              {
-                width: '60%',
-                stack: [
-                  {
-                    text: 'VIBEPASS E-TICKET',
-                    fontSize: 20,
-                    bold: true,
-                    color: '#FFFFFF',
-                    alignment: 'center',
-                    margin: [0, 15, 0, 3],
-                  },
-                  {
-                    text: 'Movie Ticket - Digital Copy',
-                    fontSize: 10,
-                    color: '#FFFFFF',
-                    alignment: 'center',
-                    margin: [0, 0, 0, 0],
-                  },
-                ],
-              },
-              {
-                width: '20%',
-                stack: [
-                  {
-                    text: 'CONFIRMED',
-                    fontSize: 10,
-                    bold: true,
-                    color: '#FFFFFF',
-                    background: '#CC2027', // VibePass brand red
-                    alignment: 'center',
-                    margin: [0, 12, 15, 3],
-                    border: [1, 1, 1, 1],
-                    borderColor: '#A8181E',
-                    borderRadius: 4,
-                    padding: [10, 6, 10, 6],
-                    decoration: 'underline',
-                    decorationColor: '#FFFFFF',
-                    decorationStyle: 'solid',
-                  },
-                  {
-                    text: 'PAID',
-                    fontSize: 9,
-                    bold: true,
-                    color: '#FFFFFF',
-                    background: '#10B981', // Success green
-                    alignment: 'center',
-                    margin: [0, 0, 0, 0],
-                    border: [1, 1, 1, 1],
-                    borderColor: '#0D9C6F',
-                    borderRadius: 10,
-                    padding: [8, 8, 8, 8],
-                  },
-                ],
-              },
-            ],
-            absolutePosition: { x: 25, y: 25 },
-          },
-        ],
-        margin: [0, 0, 0, 25],
-      },
 
-      // Greeting Section
-      {
-        text: [
-          { text: 'Dear ', fontSize: 11 },
-          {
-            text: `${userName || 'Valued Customer'},`,
-            fontSize: 11,
-            bold: true,
-          },
-        ],
-        margin: [0, 0, 0, 8],
+    const docDefinition = {
+      pageSize: 'A4',
+      pageMargins: [20, 20, 20, 20],
+      defaultStyle: {
+        font: 'Helvetica',
+        fontSize: 10,
+        lineHeight: 1.3,
       },
-      {
-        text: 'Your request to book e-ticket for your movie experience was successful. Please present this e-ticket at the theater entrance.',
-        fontSize: 9,
-        color: '#555555',
-        margin: [0, 0, 0, 20],
-      },
-
-      // Main Content Columns
-      {
-        columns: [
-          // Left Column - Booking Details
-          {
-            width: '65%',
-            stack: [
-              // Movie Information
-              {
-                table: {
-                  widths: ['40%', '60%'],
-                  body: [
-                    [
-                      {
-                        text: 'MOVIE INFORMATION',
-                        colSpan: 2,
-                        bold: true,
-                        fontSize: 11,
-                        color: '#FFFFFF',
-                        fillColor: '#CC2027',
-                        margin: [8, 6, 8, 6],
-                        border: [false, false, false, false],
-                      },
-                      {},
-                    ],
-                    [
-                      {
-                        text: 'Movie Title',
-                        bold: true,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                      {
-                        text: movieTitle,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                    ],
-                    [
-                      {
-                        text: 'Theater Name',
-                        bold: true,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                      {
-                        text: theaterName,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                    ],
-                    [
-                      {
-                        text: 'Screen',
-                        bold: true,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                      {
-                        text: screen || 'Main Hall',
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                    ],
+      content: [
+        // Header Section
+        {
+          stack: [
+            {
+              canvas: [
+                { type: 'rect', x: 0, y: 0, w: 555, h: 70, color: '#CC2027' },
+              ],
+            },
+            {
+              columns: [
+                {
+                  width: '20%',
+                  stack: logoBase64
+                    ? [
+                        {
+                          image: logoBase64,
+                          width: 80,
+                          height: 60,
+                          alignment: 'left',
+                          margin: [0, 0, 0, 0],
+                        },
+                      ]
+                    : [
+                        {
+                          text: 'VIBEPASS',
+                          fontSize: 12,
+                          bold: true,
+                          color: '#FFFFFF',
+                          alignment: 'left',
+                          margin: [15, 20, 0, 0],
+                        },
+                      ],
+                },
+                {
+                  width: '60%',
+                  stack: [
+                    {
+                      text: 'VIBEPASS E-TICKET',
+                      fontSize: 20,
+                      bold: true,
+                      color: '#FFFFFF',
+                      alignment: 'center',
+                      margin: [0, 15, 0, 3],
+                    },
+                    {
+                      text: 'Movie Ticket - Digital Copy',
+                      fontSize: 10,
+                      color: '#FFFFFF',
+                      alignment: 'center',
+                      margin: [0, 0, 0, 0],
+                    },
                   ],
                 },
-                layout: {
-                  hLineWidth: () => 0,
-                  vLineWidth: () => 0,
-                  paddingTop: () => 0,
-                  paddingBottom: () => 0,
-                },
-                margin: [0, 0, 0, 15],
-              },
-
-              // Show Details
-              {
-                table: {
-                  widths: ['40%', '60%'],
-                  body: [
-                    [
-                      {
-                        text: 'SHOW DETAILS',
-                        colSpan: 2,
-                        bold: true,
-                        fontSize: 11,
-                        color: '#FFFFFF',
-                        fillColor: '#CC2027',
-                        margin: [8, 6, 8, 6],
-                        border: [false, false, false, false],
-                      },
-                      {},
-                    ],
-                    [
-                      {
-                        text: 'Show Date',
-                        bold: true,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                      {
-                        text: journeyDate,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                    ],
-                    [
-                      {
-                        text: 'Show Time',
-                        bold: true,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                      {
-                        text: showTime,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                    ],
-                    [
-                      {
-                        text: 'Selected Seats',
-                        bold: true,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                      {
-                        text: selectedSeats.join(', '),
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                    ],
-                    [
-                      {
-                        text: 'No. of Seats',
-                        bold: true,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                      {
-                        text: selectedSeats.length.toString(),
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                    ],
+                {
+                  width: '20%',
+                  stack: [
+                    {
+                      text: 'CONFIRMED',
+                      fontSize: 10,
+                      bold: true,
+                      color: '#FFFFFF',
+                      background: '#CC2027', // VibePass brand red
+                      alignment: 'center',
+                      margin: [0, 12, 15, 3],
+                      border: [1, 1, 1, 1],
+                      borderColor: '#A8181E',
+                      borderRadius: 4,
+                      padding: [10, 6, 10, 6],
+                      decoration: 'underline',
+                      decorationColor: '#FFFFFF',
+                      decorationStyle: 'solid',
+                    },
+                    {
+                      text: 'PAID',
+                      fontSize: 9,
+                      bold: true,
+                      color: '#FFFFFF',
+                      background: '#10B981', // Success green
+                      alignment: 'center',
+                      margin: [0, 0, 0, 0],
+                      border: [1, 1, 1, 1],
+                      borderColor: '#0D9C6F',
+                      borderRadius: 10,
+                      padding: [8, 8, 8, 8],
+                    },
                   ],
                 },
-                layout: {
-                  hLineWidth: () => 0,
-                  vLineWidth: () => 0,
-                  paddingTop: () => 0,
-                  paddingBottom: () => 0,
-                },
-                margin: [0, 0, 0, 15],
-              },
+              ],
+              absolutePosition: { x: 25, y: 25 },
+            },
+          ],
+          margin: [0, 0, 0, 25],
+        },
 
-              // Customer Information
-              {
-                table: {
-                  widths: ['40%', '60%'],
-                  body: [
-                    [
-                      {
-                        text: 'CUSTOMER INFORMATION',
-                        colSpan: 2,
-                        bold: true,
-                        fontSize: 11,
-                        color: '#FFFFFF',
-                        fillColor: '#CC2027',
-                        margin: [8, 6, 8, 6],
-                        border: [false, false, false, false],
-                      },
-                      {},
+        // Greeting Section
+        {
+          text: [
+            { text: 'Dear ', fontSize: 11 },
+            {
+              text: `${userName || 'Valued Customer'},`,
+              fontSize: 11,
+              bold: true,
+            },
+          ],
+          margin: [0, 0, 0, 8],
+        },
+        {
+          text: 'Your request to book e-ticket for your movie experience was successful. Please present this e-ticket at the theater entrance.',
+          fontSize: 9,
+          color: '#555555',
+          margin: [0, 0, 0, 20],
+        },
+
+        // Main Content Columns
+        {
+          columns: [
+            // Left Column - Booking Details
+            {
+              width: '65%',
+              stack: [
+                // Movie Information
+                {
+                  table: {
+                    widths: ['40%', '60%'],
+                    body: [
+                      [
+                        {
+                          text: 'MOVIE INFORMATION',
+                          colSpan: 2,
+                          bold: true,
+                          fontSize: 11,
+                          color: '#FFFFFF',
+                          fillColor: '#CC2027',
+                          margin: [8, 6, 8, 6],
+                          border: [false, false, false, false],
+                        },
+                        {},
+                      ],
+                      [
+                        {
+                          text: 'Movie Title',
+                          bold: true,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                        {
+                          text: movieTitle,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                      ],
+                      [
+                        {
+                          text: 'Theater Name',
+                          bold: true,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                        {
+                          text: theaterName,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                      ],
+                      [
+                        {
+                          text: 'Screen',
+                          bold: true,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                        {
+                          text: screen || 'Main Hall',
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                      ],
                     ],
-                    [
-                      {
-                        text: 'Customer Name',
-                        bold: true,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                      {
-                        text: userName || 'Guest',
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
+                  },
+                  layout: {
+                    hLineWidth: () => 0,
+                    vLineWidth: () => 0,
+                    paddingTop: () => 0,
+                    paddingBottom: () => 0,
+                  },
+                  margin: [0, 0, 0, 15],
+                },
+
+                // Show Details
+                {
+                  table: {
+                    widths: ['40%', '60%'],
+                    body: [
+                      [
+                        {
+                          text: 'SHOW DETAILS',
+                          colSpan: 2,
+                          bold: true,
+                          fontSize: 11,
+                          color: '#FFFFFF',
+                          fillColor: '#CC2027',
+                          margin: [8, 6, 8, 6],
+                          border: [false, false, false, false],
+                        },
+                        {},
+                      ],
+                      [
+                        {
+                          text: 'Show Date',
+                          bold: true,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                        {
+                          text: journeyDate,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                      ],
+                      [
+                        {
+                          text: 'Show Time',
+                          bold: true,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                        {
+                          text: showTime,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                      ],
+                      [
+                        {
+                          text: 'Selected Seats',
+                          bold: true,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                        {
+                          text: selectedSeats.join(', '),
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                      ],
+                      [
+                        {
+                          text: 'No. of Seats',
+                          bold: true,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                        {
+                          text: selectedSeats.length.toString(),
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                      ],
                     ],
-                    [
-                      {
-                        text: 'Email Address',
-                        bold: true,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                      {
-                        text: userEmail,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
+                  },
+                  layout: {
+                    hLineWidth: () => 0,
+                    vLineWidth: () => 0,
+                    paddingTop: () => 0,
+                    paddingBottom: () => 0,
+                  },
+                  margin: [0, 0, 0, 15],
+                },
+
+                // Customer Information
+                {
+                  table: {
+                    widths: ['40%', '60%'],
+                    body: [
+                      [
+                        {
+                          text: 'CUSTOMER INFORMATION',
+                          colSpan: 2,
+                          bold: true,
+                          fontSize: 11,
+                          color: '#FFFFFF',
+                          fillColor: '#CC2027',
+                          margin: [8, 6, 8, 6],
+                          border: [false, false, false, false],
+                        },
+                        {},
+                      ],
+                      [
+                        {
+                          text: 'Customer Name',
+                          bold: true,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                        {
+                          text: userName || 'Guest',
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                      ],
+                      [
+                        {
+                          text: 'Email Address',
+                          bold: true,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                        {
+                          text: userEmail,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                      ],
                     ],
+                  },
+                  layout: {
+                    hLineWidth: () => 0,
+                    vLineWidth: () => 0,
+                    paddingTop: () => 0,
+                    paddingBottom: () => 0,
+                  },
+                  margin: [0, 0, 0, 15],
+                },
+
+                // Payment Information
+                {
+                  table: {
+                    widths: ['40%', '60%'],
+                    body: [
+                      [
+                        {
+                          text: 'PAYMENT INFORMATION',
+                          colSpan: 2,
+                          bold: true,
+                          fontSize: 11,
+                          color: '#FFFFFF',
+                          fillColor: '#CC2027',
+                          margin: [8, 6, 8, 6],
+                          border: [false, false, false, false],
+                        },
+                        {},
+                      ],
+                      [
+                        {
+                          text: 'Transaction ID',
+                          bold: true,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                        {
+                          text: transactionId,
+                          fontSize: 8,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                      ],
+                      [
+                        {
+                          text: 'Booking ID',
+                          bold: true,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                        {
+                          text: bookingIdFromDB.toString(),
+                          fontSize: 8,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                      ],
+                      [
+                        {
+                          text: 'Total Amount Paid',
+                          bold: true,
+                          fontSize: 9,
+                          color: '#333333',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                        {
+                          text: `BDT ${parseFloat(totalAmount).toFixed(2)}`,
+                          fontSize: 11,
+                          bold: true,
+                          color: '#CC2027',
+                          border: [false, false, false, true],
+                          borderColor: [
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                            '#E0E0E0',
+                          ],
+                          margin: [8, 5, 8, 5],
+                        },
+                      ],
+                    ],
+                  },
+                  layout: {
+                    hLineWidth: () => 0,
+                    vLineWidth: () => 0,
+                    paddingTop: () => 0,
+                    paddingBottom: () => 0,
+                  },
+                  margin: [0, 0, 0, 0],
+                },
+              ],
+            },
+
+            // Right Column - QR Code & Important Info
+            {
+              width: '35%',
+              stack: [
+                // QR Code Section
+                {
+                  stack: [
+                    {
+                      image: qrDataUrl,
+                      width: 130,
+                      height: 130,
+                      alignment: 'center',
+                      margin: [0, 0, 0, 8],
+                    },
+                    {
+                      text: 'SCAN AT ENTRANCE',
+                      fontSize: 10,
+                      bold: true,
+                      alignment: 'center',
+                      color: '#CC2027',
+                      margin: [0, 0, 0, 3],
+                    },
+                    {
+                      text: 'Present this QR code for verification',
+                      fontSize: 8,
+                      alignment: 'center',
+                      color: '#666666',
+                      margin: [0, 0, 0, 15],
+                    },
                   ],
+                  alignment: 'center',
+                  margin: [0, 0, 0, 20],
                 },
-                layout: {
-                  hLineWidth: () => 0,
-                  vLineWidth: () => 0,
-                  paddingTop: () => 0,
-                  paddingBottom: () => 0,
-                },
-                margin: [0, 0, 0, 15],
-              },
 
-              // Payment Information
-              {
-                table: {
-                  widths: ['40%', '60%'],
-                  body: [
-                    [
-                      {
-                        text: 'PAYMENT INFORMATION',
-                        colSpan: 2,
-                        bold: true,
-                        fontSize: 11,
-                        color: '#FFFFFF',
-                        fillColor: '#CC2027',
-                        margin: [8, 6, 8, 6],
-                        border: [false, false, false, false],
-                      },
-                      {},
-                    ],
-                    [
-                      {
-                        text: 'Transaction ID',
-                        bold: true,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                      {
-                        text: transactionId,
-                        fontSize: 8,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                    ],
-                    [
-                      {
-                        text: 'Booking ID',
-                        bold: true,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                      {
-                        text: bookingIdFromDB.toString(),
-                        fontSize: 8,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                    ],
-                    [
-                      {
-                        text: 'Total Amount Paid',
-                        bold: true,
-                        fontSize: 9,
-                        color: '#333333',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                      {
-                        text: `BDT ${parseFloat(totalAmount).toFixed(2)}`,
-                        fontSize: 11,
-                        bold: true,
-                        color: '#CC2027',
-                        border: [false, false, false, true],
-                        borderColor: [
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                          '#E0E0E0',
-                        ],
-                        margin: [8, 5, 8, 5],
-                      },
-                    ],
+                // Ticket Information
+                {
+                  stack: [
+                    {
+                      text: 'TICKET INFORMATION',
+                      fontSize: 10,
+                      bold: true,
+                      color: '#333333',
+                      margin: [0, 0, 0, 8],
+                    },
+                    {
+                      text: `Issue Date & Time: ${issueDate} ${issueTime}`,
+                      fontSize: 8,
+                      margin: [0, 0, 0, 3],
+                    },
+                    {
+                      text: `Show Date & Time: ${journeyDate} ${showTime}`,
+                      fontSize: 8,
+                      margin: [0, 0, 0, 8],
+                    },
                   ],
+                  margin: [0, 0, 0, 15],
                 },
-                layout: {
-                  hLineWidth: () => 0,
-                  vLineWidth: () => 0,
-                  paddingTop: () => 0,
-                  paddingBottom: () => 0,
+
+                // Important Instructions
+                {
+                  stack: [
+                    {
+                      text: 'IMPORTANT NOTES',
+                      fontSize: 10,
+                      bold: true,
+                      color: '#CC2027',
+                      margin: [0, 0, 0, 8],
+                    },
+                    {
+                      ul: [
+                        'Arrive 30 minutes before showtime',
+                        'Bring valid photo identity card',
+                        'This ticket is non-transferable',
+                        'Keep ticket safe and secure',
+                        'No outside food allowed',
+                        'Follow theater staff instructions',
+                      ],
+                      fontSize: 8,
+                      color: '#666666',
+                      lineHeight: 1.2,
+                    },
+                  ],
+                  margin: [0, 0, 0, 0],
                 },
-                margin: [0, 0, 0, 0],
-              },
-            ],
-          },
+              ],
+            },
+          ],
+          columnGap: 15,
+        },
 
-          // Right Column - QR Code & Important Info
-          {
-            width: '35%',
-            stack: [
-              // QR Code Section
-              {
-                stack: [
-                  {
-                    image: qrDataUrl,
-                    width: 130,
-                    height: 130,
-                    alignment: 'center',
-                    margin: [0, 0, 0, 8],
-                  },
-                  {
-                    text: 'SCAN AT ENTRANCE',
-                    fontSize: 10,
-                    bold: true,
-                    alignment: 'center',
-                    color: '#CC2027',
-                    margin: [0, 0, 0, 3],
-                  },
-                  {
-                    text: 'Present this QR code for verification',
-                    fontSize: 8,
-                    alignment: 'center',
-                    color: '#666666',
-                    margin: [0, 0, 0, 15],
-                  },
-                ],
-                alignment: 'center',
-                margin: [0, 0, 0, 20],
-              },
-
-              // Ticket Information
-              {
-                stack: [
-                  {
-                    text: 'TICKET INFORMATION',
-                    fontSize: 10,
-                    bold: true,
-                    color: '#333333',
-                    margin: [0, 0, 0, 8],
-                  },
-                  {
-                    text: `Issue Date & Time: ${issueDate} ${issueTime}`,
-                    fontSize: 8,
-                    margin: [0, 0, 0, 3],
-                  },
-                  {
-                    text: `Show Date & Time: ${journeyDate} ${showTime}`,
-                    fontSize: 8,
-                    margin: [0, 0, 0, 8],
-                  },
-                ],
-                margin: [0, 0, 0, 15],
-              },
-
-              // Important Instructions
-              {
-                stack: [
-                  {
-                    text: 'IMPORTANT NOTES',
-                    fontSize: 10,
-                    bold: true,
-                    color: '#CC2027',
-                    margin: [0, 0, 0, 8],
-                  },
-                  {
-                    ul: [
-                      'Arrive 30 minutes before showtime',
-                      'Bring valid photo identity card',
-                      'This ticket is non-transferable',
-                      'Keep ticket safe and secure',
-                      'No outside food allowed',
-                      'Follow theater staff instructions',
-                    ],
-                    fontSize: 8,
-                    color: '#666666',
-                    lineHeight: 1.2,
-                  },
-                ],
-                margin: [0, 0, 0, 0],
-              },
-            ],
-          },
-        ],
-        columnGap: 15,
-      },
-
-      // Footer Section
-      {
-        stack: [
-          {
-            canvas: [
-              { type: 'rect', x: 0, y: 0, w: 555, h: 1, color: '#E0E0E0' },
-            ],
-            margin: [0, 25, 0, 12],
-          },
-          {
-            text: '(*) This e-ticket will be valid on production of Photo Identity Card of the passenger.',
-            fontSize: 8,
-            color: '#666666',
-            margin: [0, 0, 0, 5],
-          },
-          {
-            text: "(*) If you purchased e-ticket for your own travel, digital copy is sufficient to enter. You don't need to print out any hard copy.",
-            fontSize: 8,
-            color: '#666666',
-            margin: [0, 0, 0, 5],
-          },
-          {
-            text: 'Please keep your ticket in a safe place and DO NOT share it with anybody. VibePass and/or its affiliates will not be responsible for misused tickets.',
-            fontSize: 8,
-            color: '#666666',
-            italics: true,
-            margin: [0, 0, 0, 8],
-          },
-          {
-            text: 'Hope you have a pleasant and enjoyable movie experience with VibePass!',
-            fontSize: 9,
-            color: '#333333',
-            bold: true,
-            margin: [0, 0, 0, 8],
-          },
-          {
-            columns: [
-              {
-                text: 'For assistance, contact: support@vibepass.com',
-                fontSize: 8,
-                color: '#666666',
-              },
-              {
-                text: 'www.vibepass.com',
-                fontSize: 8,
-                color: '#CC2027',
-                bold: true,
-                alignment: 'right',
-              },
-            ],
-            margin: [0, 5, 0, 0],
-          },
-        ],
-      },
-    ],
-  }
+        // Footer Section
+        {
+          stack: [
+            {
+              canvas: [
+                { type: 'rect', x: 0, y: 0, w: 555, h: 1, color: '#E0E0E0' },
+              ],
+              margin: [0, 25, 0, 12],
+            },
+            {
+              text: '(*) This e-ticket will be valid on production of Photo Identity Card of the passenger.',
+              fontSize: 8,
+              color: '#666666',
+              margin: [0, 0, 0, 5],
+            },
+            {
+              text: "(*) If you purchased e-ticket for your own travel, digital copy is sufficient to enter. You don't need to print out any hard copy.",
+              fontSize: 8,
+              color: '#666666',
+              margin: [0, 0, 0, 5],
+            },
+            {
+              text: 'Please keep your ticket in a safe place and DO NOT share it with anybody. VibePass and/or its affiliates will not be responsible for misused tickets.',
+              fontSize: 8,
+              color: '#666666',
+              italics: true,
+              margin: [0, 0, 0, 8],
+            },
+            {
+              text: 'Hope you have a pleasant and enjoyable movie experience with VibePass!',
+              fontSize: 9,
+              color: '#333333',
+              bold: true,
+              margin: [0, 0, 0, 8],
+            },
+            {
+              columns: [
+                {
+                  text: 'For assistance, contact: vibepass.helpdesk@gmail.com',
+                  fontSize: 8,
+                  color: '#666666',
+                },
+                {
+                  text: `${frontendUrl}`,
+                  fontSize: 8,
+                  color: '#CC2027',
+                  bold: true,
+                  alignment: 'right',
+                },
+              ],
+              margin: [0, 5, 0, 0],
+            },
+          ],
+        },
+      ],
+    }
 
     // Generate PDF
     const pdfDoc = printer.createPdfKitDocument(docDefinition)
