@@ -9,15 +9,15 @@ const SHOWTIMES = [
   { id: 'showtime-3', time: '09:00 PM', price: 180 },
 ]
 
-
-
 // ✅ Get Available Showtimes
 const getAvailableShowtimes = async (req, res) => {
   try {
     const { movieId, showDate } = req.query
 
     if (!movieId || !showDate) {
-      return res.status(400).json({ error: 'movieId and showDate are required' })
+      return res
+        .status(400)
+        .json({ error: 'movieId and showDate are required' })
     }
 
     const today = new Date().toISOString().split('T')[0]
@@ -32,11 +32,11 @@ const getAvailableShowtimes = async (req, res) => {
           movieId,
           showDate: new Date(showDate),
           showTime: showtime.time,
-          status: { $ne: 'cancelled' }
+          status: { $ne: 'cancelled' },
         })
 
         const bookedSeatsCount = bookings.reduce(
-          (total, booking) => total + booking.selectedSeats.length, 
+          (total, booking) => total + booking.selectedSeats.length,
           0
         )
 
@@ -47,13 +47,16 @@ const getAvailableShowtimes = async (req, res) => {
         if (showDate === today) {
           const [time, period] = showtime.time.split(' ')
           const [hour, minute] = time.split(':').map(Number)
-          
+
           let hour24 = hour
           if (period === 'PM' && hour !== 12) hour24 += 12
           else if (period === 'AM' && hour === 12) hour24 = 0
 
           // Show হয়ে গেলে isPast = true
-          if (currentHour > hour24 || (currentHour === hour24 && currentMinute >= minute)) {
+          if (
+            currentHour > hour24 ||
+            (currentHour === hour24 && currentMinute >= minute)
+          ) {
             isPast = true
           }
         }
@@ -62,17 +65,19 @@ const getAvailableShowtimes = async (req, res) => {
           ...showtime,
           available: availableSeats,
           isAvailable: availableSeats > 0 && !isPast,
-          isPast
+          isPast,
         }
       })
     )
 
     // শুধু active showtimes return করব
-    const activeShowtimes = showtimesWithAvailability.filter(show => !show.isPast)
+    const activeShowtimes = showtimesWithAvailability.filter(
+      (show) => !show.isPast
+    )
 
-    res.status(200).json({ 
-      showtimes: activeShowtimes, 
-      totalSeats: TOTAL_SEATS 
+    res.status(200).json({
+      showtimes: activeShowtimes,
+      totalSeats: TOTAL_SEATS,
     })
   } catch (error) {
     console.error('❌ Error:', error)
@@ -85,14 +90,14 @@ const deletePastBookings = async (req, res) => {
   try {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
-    const result = await Booking.deleteMany({ 
-      showDate: { $lt: today } 
+
+    const result = await Booking.deleteMany({
+      showDate: { $lt: today },
     })
-    
-    res.status(200).json({ 
-      message: 'Past bookings deleted', 
-      deletedCount: result.deletedCount 
+
+    res.status(200).json({
+      message: 'Past bookings deleted',
+      deletedCount: result.deletedCount,
     })
   } catch (error) {
     console.error('❌ Error:', error)
@@ -105,21 +110,21 @@ const autoCleanupPastBookings = async () => {
   try {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
-    const result = await Booking.deleteMany({ 
-      showDate: { $lt: today } 
+
+    const result = await Booking.deleteMany({
+      showDate: { $lt: today },
     })
-    
+
     if (result.deletedCount > 0) {
-      // console.log(`🗑️ Cleanup: Deleted ${result.deletedCount} past bookings`)
+      // // console.log(`🗑️ Cleanup: Deleted ${result.deletedCount} past bookings`)
     }
   } catch (error) {
     console.error('❌ Cleanup error:', error)
   }
 }
 
-module.exports = { 
-  getAvailableShowtimes, 
-  deletePastBookings, 
-  autoCleanupPastBookings 
+module.exports = {
+  getAvailableShowtimes,
+  deletePastBookings,
+  autoCleanupPastBookings,
 }

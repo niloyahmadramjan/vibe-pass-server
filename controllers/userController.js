@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs')
 
 const getUserInfo = async (req, res) => {
   try {
-    console.log(req.user)
+    // console.log(req.user)
     const user = await User.findById(req.user.id).select('-password')
 
     if (!user) {
@@ -66,9 +66,6 @@ const updatePreferences = async (req, res) => {
   }
 }
 
-
-
-
 const changePin = async (req, res) => {
   try {
     const { oldPin, newPin } = req.body
@@ -99,7 +96,6 @@ const changePin = async (req, res) => {
   }
 }
 
-
 // Delete account
 const deleteAccount = async (req, res) => {
   try {
@@ -120,7 +116,6 @@ const contactSupport = async (req, res) => {
     res.status(500).json({ success: false, error: err.message })
   }
 }
-
 
 const uploadProfileImage = async (req, res) => {
   try {
@@ -151,8 +146,6 @@ const uploadProfileImage = async (req, res) => {
     res.status(500).json({ message: 'Server error' })
   }
 }
-
-
 
 module.exports = {
   updateMobile,

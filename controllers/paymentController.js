@@ -84,8 +84,6 @@ const confirmPayment = async (req, res) => {
     // After payment confirmation and booking update:
 const qrSignature = await updateBookingSignature(bookingId, transactionId)
 
-// You can include this in the email or response if needed
-console.log('QR Signature generated:', qrSignature)
 
     if (!updatedBooking) {
       return res.status(404).json({ message: 'Booking not found' })
@@ -245,7 +243,7 @@ console.log('QR Signature generated:', qrSignature)
     await transporter.sendMail({
       from: `"VibePass" <${process.env.EMAIL_USER}>`,
       to: userEmail,
-      subject: '🎉 Payment Successful - VibePass',
+      subject: 'Payment Successful - VibePass',
       html: htmlTemplate,
     })
 
@@ -255,7 +253,7 @@ console.log('QR Signature generated:', qrSignature)
       payment,
     })
   } catch (err) {
-    console.error('❌ Confirm payment error:', err)
+    console.error('Confirm payment error:', err)
     res.status(500).json({ error: 'Could not confirm payment' })
   }
 }

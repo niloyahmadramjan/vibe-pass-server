@@ -66,18 +66,18 @@ app.set('io', io)
 
 // Handle Socket.io events
 io.on('connection', (socket) => {
-  console.log('⚡ User connected:', socket.id)
+  // console.log('⚡ User connected:', socket.id)
 
   // Join a specific movie + date + showtime room
   socket.on('joinRoom', ({ movieId, showDate, showtime }) => {
     const room = `${movieId}-${showDate}-${showtime}`
     socket.join(room)
-    console.log(`👉 ${socket.id} joined room: ${room}`)
+    // console.log(`👉 ${socket.id} joined room: ${room}`)
   })
 
   // Handle disconnect
   socket.on('disconnect', () => {
-    console.log('❌ User disconnected:', socket.id)
+    // console.log('❌ User disconnected:', socket.id)
   })
 })
 
@@ -144,7 +144,6 @@ app.use('/api/chat', chatRoutes)
 
 // Verify QR code
 app.use('/api/verify-qr', verifyqr)
-
 
 // =========================
 // 🗄️ Database + Server Start
