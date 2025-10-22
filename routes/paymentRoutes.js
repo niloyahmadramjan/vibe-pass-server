@@ -1,4 +1,14 @@
+// ===============================
+// 💳 Payment Routes
+// ===============================
 const express = require('express')
+const router = express.Router()
+const Stripe = require('stripe')
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY)
+
+// ===============================
+// 📦 Import Controllers & Middleware
+// ===============================
 const {
   initiatePayment,
   confirmPayment,
@@ -7,21 +17,19 @@ const {
   getPaymentsByEmail,
   getPaymentById,
 } = require('../controllers/paymentController')
-const adminOnly = require('../middlewares/adminOnly')
+
 const verifyToken = require('../middlewares/verifyToken')
-const Stripe = require('stripe')
 
-const router = express.Router()
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY)
+router.post('/', verifyToken, initiatePayment)
+router.post('/confirm-payment', verifyToken, confirmPayment)
+router.get('/user', verifyToken, getPaymentsByEmail)
+router.get('/weekly-revenue', verifyToken, getWeeklyRevenue)
+router.get('/', verifyToken, getAllPaymentData)
+router.get('/:id', verifyToken, getPaymentById)
 
-//  Controller-based routes
-router.post('/', initiatePayment)
-router.post('/confirm-payment', confirmPayment)
-router.get('/user', getPaymentsByEmail)
-router.get('/weekly-revenue', verifyToken, adminOnly, getWeeklyRevenue)
-router.get('/', getAllPaymentData)
-router.get('/:id', getPaymentById)
-// Direct Stripe PaymentIntent
+// ===============================
+// 💰 Direct Stripe PaymentIntent Creation
+// ===============================
 router.post('/create-payment-intent', async (req, res) => {
   try {
     const { amount } = req.body
@@ -32,15 +40,21 @@ router.post('/create-payment-intent', async (req, res) => {
       })
     }
 
+    // ✅ Stripe expects smallest currency unit (cents)
+    const amountInCents = Math.round(amount * 100)
+
     const paymentIntent = await stripe.paymentIntents.create({
-      amount,
+      amount: amountInCents,
       currency: 'usd',
       metadata: { integration_check: 'accept_a_payment' },
     })
 
-    res.json({ clientSecret: paymentIntent.client_secret, success: true })
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      success: true,
+    })
   } catch (error) {
-    console.error('Payment Intent Error:', error)
+    console.error('❌ Payment Intent Error:', error)
     res.status(500).json({
       error: 'Failed to create payment intent',
       details: error.message,
@@ -48,14 +62,20 @@ router.post('/create-payment-intent', async (req, res) => {
   }
 })
 
-// ✅ Dummy Save Payment
+// ===============================
+// 💾 Dummy Save Payment Endpoint (for testing)
+// ===============================
 router.post('/save-payment', async (req, res) => {
   try {
-    // // console.log("💾 Payment Saved:", req.body);
+    // console.log("💾 Payment Saved:", req.body);
     res.json({ success: true })
   } catch (err) {
+    console.error('❌ Save Payment Error:', err)
     res.status(500).json({ error: 'Failed to save payment' })
   }
 })
 
+// ===============================
+// ✅ Export Router
+// ===============================
 module.exports = router

@@ -208,40 +208,6 @@ const getReservedSeats = async (req, res) => {
   }
 }
 
-// ✅ Update payment status
-const updatePaymentStatus = async (req, res) => {
-  try {
-    const { id } = req.params
-    const { paymentStatus, transactionId } = req.body
-
-    const booking = await Booking.findById(id)
-    if (!booking) return res.status(404).json({ error: 'Booking not found' })
-
-    booking.paymentStatus = paymentStatus || booking.paymentStatus
-    booking.status = paymentStatus === 'paid' ? 'confirmed' : booking.status
-    if (transactionId) booking.transactionId = transactionId
-
-    await booking.save()
-
-    // 🔁 Socket update
-    const io = req.app.get('io')
-    if (io) {
-      const room = `${booking.movieId}-${
-        booking.showDate.toISOString().split('T')[0]
-      }-${booking.showTime}`
-      io.to(room).emit('paymentUpdated', {
-        bookingId: booking._id,
-        paymentStatus: booking.paymentStatus,
-        status: booking.status,
-      })
-    }
-
-    res.status(200).json({ message: 'Payment status updated', booking })
-  } catch (error) {
-    console.error('❌ Error updating payment:', error)
-    res.status(500).json({ error: 'Server error' })
-  }
-}
 
 // ✅ Check booking expiry manually
 const checkBookingExpiry = async (req, res) => {
@@ -327,7 +293,6 @@ module.exports = {
   getUserBookings,
   getAllBookings,
   getReservedSeats,
-  updatePaymentStatus,
   checkBookingExpiry,
   getWeeklyBookings,
   deleteBooking,
