@@ -52,7 +52,7 @@ const updateBookingSignature = async (bookingId, transactionId) => {
       { new: true }
     )
 
-    console.log(`✅ QR signature generated for booking: ${bookingId}`)
+    // console.log(`✅ QR signature generated for booking: ${bookingId}`)
     return qrSignature
   } catch (error) {
     console.error('❌ Error updating booking signature:', error)

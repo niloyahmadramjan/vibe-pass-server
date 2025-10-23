@@ -3,19 +3,28 @@ const Payment = require('../models/Payment')
 const Booking = require('../models/Booking')
 const Stripe = require('stripe')
 const nodemailer = require('nodemailer')
+const { updateBookingSignature } = require('../utils/updateBookingSignature')
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY)
-const {updateBookingSignature} = require("../utils/updateBookingSignature")
 
+// ===============================
 // ✅ Initiate Payment
+// ===============================
 const initiatePayment = async (req, res) => {
   try {
     const paymentData = { ...req.body }
-    const { amount, bookingId, userId } = paymentData
+    const { amount, bookingId } = paymentData
+
+    if (!amount || !bookingId ) {
+      return res.status(400).json({ error: 'Missing required payment fields' })
+    }
+
+    // Stripe requires smallest currency unit (e.g. cents)
+    const amountInCents = Math.round(amount * 100)
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount,
+      amount: amountInCents,
       currency: 'usd',
-      metadata: { bookingId, userId },
+      metadata: { bookingId },
       automatic_payment_methods: { enabled: true },
     })
 
@@ -31,12 +40,16 @@ const initiatePayment = async (req, res) => {
       payment,
     })
   } catch (err) {
-    console.error('Payment initiation error:', err)
-    res.status(500).json({ error: 'Payment initiation failed' })
+    console.error('❌ Payment initiation error:', err)
+    res
+      .status(500)
+      .json({ error: 'Payment initiation failed', details: err.message })
   }
 }
 
+// ===============================
 // ✅ Confirm Payment + Send Email
+// ===============================
 const confirmPayment = async (req, res) => {
   try {
     const paymentData = { ...req.body }
@@ -53,65 +66,72 @@ const confirmPayment = async (req, res) => {
       screen,
     } = paymentData
 
-    // 1. Stripe Payment Verification
+    if (!transactionId || !bookingId) {
+      return res
+        .status(400)
+        .json({ error: 'Transaction ID and booking ID are required' })
+    }
+
+    // 1️⃣ Stripe Payment Verification
     const paymentIntent = await stripe.paymentIntents.retrieve(transactionId)
     if (!paymentIntent || paymentIntent.status !== 'succeeded') {
       return res.status(400).json({ error: 'Payment not successful yet' })
     }
 
-    // 2. Find and update payment
+    // 2️⃣ Update or create payment record
     let payment = await Payment.findOneAndUpdate(
       { providerPaymentId: transactionId },
       {
         ...paymentData,
         status: 'paid',
         updatedAt: new Date(),
-        transactionId: transactionId, // Ensure transactionId is saved
+        transactionId,
       },
       { new: true }
     )
 
-    // 3. Update booking status - ONLY ONCE
+    // 3️⃣ Update booking status (with paid info)
     const updatedBooking = await Booking.findByIdAndUpdate(
       bookingId,
       {
         status: 'confirmed',
         paymentStatus: 'paid',
         paymentId: transactionId,
+        transactionId,
       },
       { new: true }
     )
-    // After payment confirmation and booking update:
-const qrSignature = await updateBookingSignature(bookingId, transactionId)
-
-// You can include this in the email or response if needed
-console.log('QR Signature generated:', qrSignature)
 
     if (!updatedBooking) {
       return res.status(404).json({ message: 'Booking not found' })
     }
 
-    // 4. If payment record doesn't exist, create it
+    // 4️⃣ Generate & update QR Signature
+    const qrSignature = await updateBookingSignature(bookingId, transactionId)
+
+    // 5️⃣ If payment record didn’t exist, create it
     if (!payment) {
       payment = await Payment.create({
         ...paymentData,
         status: 'paid',
         provider: 'stripe',
         providerPaymentId: transactionId,
-        transactionId: transactionId,
+        transactionId,
       })
     }
 
-    // 5. Send confirmation email
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    })
-    const htmlTemplate = `
-    <html>
+    // 6️⃣ Send confirmation email
+    try {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      })
+
+      const htmlTemplate = `
+      <html>
         <head>
           <style>
             body {
@@ -138,11 +158,6 @@ console.log('QR Signature generated:', qrSignature)
             .header h1 {
               margin: 0;
               font-size: 28px;
-            }
-            .header p {
-              margin: 5px 0 0;
-              font-size: 14px;
-              opacity: 0.9;
             }
             .section {
               padding: 20px 30px;
@@ -174,28 +189,6 @@ console.log('QR Signature generated:', qrSignature)
               color: #333;
               border-bottom: 1px solid #eee;
             }
-            .badge {
-              display: inline-block;
-              padding: 4px 10px;
-              border-radius: 8px;
-              font-size: 13px;
-              font-weight: bold;
-              color: #fff;
-            }
-            .qr {
-              text-align: center;
-              padding: 25px;
-            }
-            .qr img {
-              border: 6px solid #f4f4f4;
-              border-radius: 12px;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            }
-            .qr p {
-              margin-top: 10px;
-              font-size: 13px;
-              color: #444;
-            }
             .footer {
               text-align: center;
               font-size: 12px;
@@ -218,9 +211,8 @@ console.log('QR Signature generated:', qrSignature)
                 <tr><th>Movie</th><td>${sessionTitle}</td></tr>
                 <tr><th>Theater</th><td>${theaterName}</td></tr>
                 <tr><th>Screen</th><td>${screen || 'N/A'}</td></tr>
-                
                 <tr><th>Time</th><td>${showTime}</td></tr>
-                <tr><th>Seats</th><td>${selectedSeats.join(', ')}</td></tr>
+                <tr><th>Seats</th><td>${selectedSeats?.join(', ')}</td></tr>
               </table>
             </div>
 
@@ -231,9 +223,10 @@ console.log('QR Signature generated:', qrSignature)
                 <tr><th>Email</th><td>${userEmail}</td></tr>
                 <tr><th>Transaction ID</th><td>${transactionId}</td></tr>
                 <tr><th>Status</th><td>Paid</td></tr>
-                <tr><th>Total Paid</th><td style="font-weight:bold; color:#CC2027;">৳${amount}</td></tr>
+                <tr><th>Total Paid</th><td style="font-weight:bold; color:#CC2027;">৳${amount/100}</td></tr>
               </table>
             </div>
+
             <div class="footer">
               ⚠️ Please arrive at least 30 minutes before showtime.<br/>
               Bring a valid ID matching the booking name.
@@ -242,25 +235,34 @@ console.log('QR Signature generated:', qrSignature)
         </body>
       </html>`
 
-    await transporter.sendMail({
-      from: `"VibePass" <${process.env.EMAIL_USER}>`,
-      to: userEmail,
-      subject: '🎉 Payment Successful - VibePass',
-      html: htmlTemplate,
-    })
+      await transporter.sendMail({
+        from: `"VibePass" <${process.env.EMAIL_USER}>`,
+        to: userEmail,
+        subject: 'Payment Successful - VibePass',
+        html: htmlTemplate,
+      })
+    } catch (mailErr) {
+      console.error('📧 Email sending failed:', mailErr.message)
+    }
 
+    // ✅ Final Response
     res.json({
       success: true,
       message: 'Payment confirmed & email sent',
       payment,
+      qrSignature,
     })
   } catch (err) {
     console.error('❌ Confirm payment error:', err)
-    res.status(500).json({ error: 'Could not confirm payment' })
+    res
+      .status(500)
+      .json({ error: 'Could not confirm payment', details: err.message })
   }
 }
 
+// ===============================
 // ✅ Get Payment by ID
+// ===============================
 const getPaymentById = async (req, res) => {
   try {
     const payment = await Payment.findById(req.params.id)
@@ -271,7 +273,9 @@ const getPaymentById = async (req, res) => {
   }
 }
 
+// ===============================
 // ✅ Get All Payments
+// ===============================
 const getAllPaymentData = async (req, res) => {
   try {
     const payments = await Payment.find()
@@ -281,6 +285,9 @@ const getAllPaymentData = async (req, res) => {
   }
 }
 
+// ===============================
+// ✅ Weekly Revenue
+// ===============================
 const getWeeklyRevenue = async (req, res) => {
   try {
     const oneWeekAgo = new Date()
@@ -291,21 +298,18 @@ const getWeeklyRevenue = async (req, res) => {
       updatedAt: { $gte: oneWeekAgo },
     })
 
-    // Initialize 7 days with 0 revenue
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const days = Array.from({ length: 7 }, (_, i) => {
       const date = new Date()
       date.setDate(date.getDate() - (6 - i))
       return {
-        name: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        name: weekdays[date.getDay()],
         revenue: 0,
       }
     })
 
-    // Group payments by day
     payments.forEach((p) => {
-      const dayName = new Date(p.updatedAt).toLocaleDateString('en-US', {
-        weekday: 'short',
-      })
+      const dayName = weekdays[new Date(p.updatedAt).getDay()]
       const day = days.find((d) => d.name === dayName)
       if (day) day.revenue += p.amount
     })
@@ -316,20 +320,19 @@ const getWeeklyRevenue = async (req, res) => {
   }
 }
 
-// ✅ Get Payments by User Email
+// ===============================
+// ✅ Get Payments by Email
+// ===============================
 const getPaymentsByEmail = async (req, res) => {
   try {
-    const { userEmail } = req.query // Change to userEmail
-
+    const { userEmail } = req.query
     if (!userEmail) {
       return res
         .status(400)
         .json({ error: 'Email query parameter is required' })
     }
 
-    const payments = await Payment.find({ userEmail: userEmail }).sort({
-      createdAt: -1,
-    })
+    const payments = await Payment.find({ userEmail }).sort({ createdAt: -1 })
 
     if (!payments.length) {
       return res
@@ -344,6 +347,9 @@ const getPaymentsByEmail = async (req, res) => {
   }
 }
 
+// ===============================
+// ✅ Exports
+// ===============================
 module.exports = {
   initiatePayment,
   confirmPayment,

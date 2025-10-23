@@ -34,6 +34,7 @@
     "pdfkit": "^0.17.2",
     "pdfmake": "^0.2.20",
     "qrcode": "^1.5.4",
+    "qrcode-with-logos": "^1.1.1",
     "socket.io": "^4.8.1",
     "stripe": "^18.5.0",
     "uuid": "^8.3.2"
