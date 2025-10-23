@@ -4,6 +4,7 @@ const Booking = require('../models/Booking')
 const Stripe = require('stripe')
 const nodemailer = require('nodemailer')
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY)
+const {updateBookingSignature} = require("../utils/updateBookingSignature")
 
 // ✅ Initiate Payment
 const initiatePayment = async (req, res) => {
@@ -52,20 +53,25 @@ const confirmPayment = async (req, res) => {
       screen,
     } = paymentData
 
-    // 1. Stripe Payment
+    // 1. Stripe Payment Verification
     const paymentIntent = await stripe.paymentIntents.retrieve(transactionId)
     if (!paymentIntent || paymentIntent.status !== 'succeeded') {
       return res.status(400).json({ error: 'Payment not successful yet' })
     }
 
-    // 2. DB Update
+    // 2. Find and update payment
     let payment = await Payment.findOneAndUpdate(
       { providerPaymentId: transactionId },
-      { ...paymentData, status: 'paid', updatedAt: new Date() },
+      {
+        ...paymentData,
+        status: 'paid',
+        updatedAt: new Date(),
+        transactionId: transactionId, // Ensure transactionId is saved
+      },
       { new: true }
     )
-    // update booking status to "paid"
 
+    // 3. Update booking status - ONLY ONCE
     const updatedBooking = await Booking.findByIdAndUpdate(
       bookingId,
       {
@@ -75,35 +81,28 @@ const confirmPayment = async (req, res) => {
       },
       { new: true }
     )
+    // After payment confirmation and booking update:
+const qrSignature = await updateBookingSignature(bookingId, transactionId)
+
+// You can include this in the email or response if needed
+console.log('QR Signature generated:', qrSignature)
 
     if (!updatedBooking) {
       return res.status(404).json({ message: 'Booking not found' })
     }
 
+    // 4. If payment record doesn't exist, create it
     if (!payment) {
       payment = await Payment.create({
         ...paymentData,
         status: 'paid',
         provider: 'stripe',
         providerPaymentId: transactionId,
+        transactionId: transactionId,
       })
     }
 
-    // 3️⃣ Update Booking Status (✅ auto confirm)
-    if (bookingId) {
-      await Booking.findByIdAndUpdate(
-        bookingId,
-        {
-          $set: {
-            status: 'confirmed',
-            paymentStatus: 'paid',
-          },
-        },
-        { new: true }
-      )
-    }
-
-    // 3. Email পাঠানো
+    // 5. Send confirmation email
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -316,6 +315,7 @@ const getWeeklyRevenue = async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 }
+
 // ✅ Get Payments by User Email
 const getPaymentsByEmail = async (req, res) => {
   try {

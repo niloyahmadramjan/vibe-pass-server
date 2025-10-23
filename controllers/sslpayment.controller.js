@@ -2,6 +2,7 @@ const axios = require('axios')
 const { v4: uuidv4 } = require('uuid')
 const Payment = require('../models/Payment')
 const Booking = require('../models/Booking')
+const {updateBookingSignature} = require("../utils/updateBookingSignature")
 
 // Initiate SSLCommerz Payment
 const initiatePayment = async (req, res) => {
@@ -118,6 +119,14 @@ const paymentSuccess = async (req, res) => {
         },
         { new: true }
       )
+
+      // update qr code unique string
+        // After payment confirmation and booking update:
+      const qrSignature = await updateBookingSignature(bookingId, transactionId)
+      
+      // You can include this in the email or response if needed
+      console.log('QR Signature generated:', qrSignature)
+      
 
       // ✅ Update booking status to confirmed and mark as paid
       const updatedBooking = await Booking.findByIdAndUpdate(
