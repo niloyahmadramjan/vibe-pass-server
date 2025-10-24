@@ -1,12 +1,5 @@
-// =========================
-// 🎟️ Booking Routes
-// =========================
-const express = require("express");
-const router = express.Router();
-
-// =========================
-// 📦 Import Controllers
-// =========================
+const express = require('express')
+const router = express.Router()
 const {
   createBooking,
   bookingData,
@@ -15,54 +8,21 @@ const {
   getWeeklyBookings,
   getAllBookings,
   getReservedSeats,
-  updatePaymentStatus,
   checkBookingExpiry,
   deleteBooking,
-  refundBooking,
-  getRefundBooking,
-  UpdateRefundBooking,
-} = require("../controllers/bookingController");
-const adminOnly = require("../middlewares/adminOnly");
-const verifyToken = require("../middlewares/verifyToken");
-// =========================
-// 🧭 Route Definitions
-// =========================
+} = require('../controllers/bookingController')
+const verifyToken = require('../middlewares/verifyToken')
+const adminOnly = require('../middlewares/adminOnly')
 
-// 🆕 Create new booking
-router.post("/booking", createBooking);
-
-// 🔍 Get booking by ID
-router.get("/booking/:id", bookingData);
-router.get("/bookings/:id", getBookingById);
-
-// Refund booking 
-router.post("/:id/refund", refundBooking);
-
-// update
-router.patch("/:id/refund", UpdateRefundBooking);
-
-
-// ❌ Delete booking
-router.delete("/:id", deleteBooking);
-
-// 👤 Get bookings for logged-in user
-router.get("/my-bookings", getUserBookings);
-
-// 📊 Get weekly bookings stats
-router.get("/weekly-bookings", verifyToken, adminOnly, getWeeklyBookings);
-
-// 📜 Get all bookings
-// router.get('/', verifyToken, adminOnly, getAllBookings)          //...............................
-router.get("/", getAllBookings); //...............................
-
-// 💺 Get reserved seats for a specific movie + showtime
-router.get("/reserved-seats", getReservedSeats);
-
-// 💳 Update payment status
-router.patch("/booking/:id/payment", updatePaymentStatus);
-
-// ⏰ Check and update booking expiry
-router.post("/booking/:id/expiry", checkBookingExpiry);
+router.post('/booking', createBooking)
+router.get('/booking/:id', bookingData)
+router.get('/bookings/:id', getBookingById)
+router.delete('/:id', deleteBooking)
+router.get('/my-bookings', getUserBookings)
+router.get('/weekly-bookings', verifyToken, adminOnly, getWeeklyBookings)
+router.get('/', verifyToken, getAllBookings)
+router.get('/reserved-seats', getReservedSeats)
+router.post('/booking/:id/expiry', checkBookingExpiry)
 
 // =========================
 // ✅ Export Router

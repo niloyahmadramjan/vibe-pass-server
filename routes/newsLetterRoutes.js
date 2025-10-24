@@ -1,38 +1,27 @@
-const express = require("express");
+// routes/subscriptionRoutes.js
+const express = require('express');
 const router = express.Router();
-const Subscriber = require("../models/Subscriber");
+const {
+  subscribe,
+  getAllSubscribers,
+  updateSubscriber,
+  deleteSubscriber,
+  getSubscriptionStats
+} = require('../controllers/subscriberController');
 
-// POST /api/newsletter/subscribe
-router.post("/subscribe", async (req, res) => {
-  try {
-    const { email } = req.body;
+// POST /api/subscribe - Create new subscription
+router.post('/subscribe', subscribe);
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid email address" });
-    }
+// GET /api/subscribe - Get all subscribers (for admin)
+router.get('/', getAllSubscribers);
 
-    // Check if already subscribed
-    const existing = await Subscriber.findOne({ email });
-    if (existing) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email already subscribed" });
-    }
+// GET /api/subscribe/stats - Get subscription statistics
+router.get('/subscribe/stats', getSubscriptionStats);
 
-    const subscriber = new Subscriber({ email });
-    await subscriber.save();
+// PUT /api/subscribe/:id - Update subscriber
+router.put('/subscribe/:id', updateSubscriber);
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Subscribed successfully" });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Server error, try again later" });
-  }
-});
+// DELETE /api/subscribe/:id - Delete subscriber
+router.delete('/subscribe/:id', deleteSubscriber);
 
 module.exports = router;

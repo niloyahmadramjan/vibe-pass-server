@@ -10,7 +10,7 @@ const verifyToken = async (req, res, next) => {
     // 🟢 1️⃣ Try verifying your own custom JWT (local login)
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     req.user = decoded
-    console.log('✅ Verified Custom JWT:', decoded)
+    // console.log('✅ Verified Custom JWT:', decoded)
     return next()
   } catch (err1) {
     // 🔵 2️ Try verifying NextAuth token manually
@@ -22,7 +22,7 @@ const verifyToken = async (req, res, next) => {
       }
 
       req.user = decodedNextAuth
-      console.log('✅ Verified NextAuth JWT:', decodedNextAuth)
+      // console.log('✅ Verified NextAuth JWT:', decodedNextAuth)
       return next()
     } catch (err2) {
       console.error('❌ Token verification failed:', err2.message)
