@@ -27,4 +27,4 @@ router.post('/booking/:id/expiry', checkBookingExpiry)
 // =========================
 // ✅ Export Router
 // =========================
-module.exports = router
+module.exports = router;
