@@ -42,9 +42,9 @@ const bookingSchema = new Schema(
       required: true,
       validate: {
         validator: function (v) {
-          return v && v.length > 0
+          return v && v.length > 0;
         },
-        message: 'At least one seat must be selected!',
+        message: "At least one seat must be selected!",
       },
     },
     totalAmount: {
@@ -70,13 +70,13 @@ const bookingSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'cancelled', 'expired', 'checked_in'],
-      default: 'pending',
+      enum: ["pending", "confirmed", "cancelled", "expired", "checked_in"],
+      default: "pending",
     },
     paymentStatus: {
       type: String,
-      enum: ['unpaid', 'paid', 'failed', 'refunded', 'partial'],
-      default: 'unpaid',
+      enum: ["unpaid", "paid", "failed", "refunded_request", "partial"],
+      default: "unpaid",
     },
     qrSignature: {
       type: String,
@@ -94,6 +94,25 @@ const bookingSchema = new Schema(
       type: String,
       trim: true,
     },
+    status: {
+      type: String,
+      enum: ["pending", "confirmed", "cancelled", "expired", "checked_in"],
+      default: "pending",
+    },
+    paymentStatus: {
+      type: String,
+      enum: [
+        "unpaid",
+        "paid",
+        "failed",
+        "refunded_request",
+        "refunded_confirm",
+        "refund_rejected",
+        "partial",
+      ],
+      default: "unpaid",
+    },
+
     reminderSent: {
       type: Boolean,
       default: false,
@@ -103,7 +122,7 @@ const bookingSchema = new Schema(
   {
     timestamps: true,
   }
-)
+);
 
 // Index for faster queries
 bookingSchema.index({ movieId: 1, showTime: 1, status: 1 })

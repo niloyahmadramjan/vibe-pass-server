@@ -23,11 +23,11 @@ const events = require('./routes/eventRoutes')
 const newsLetterRoutes = require('./routes/newsLetterRoutes')
 const rewardRoutes = require('./routes/rewardRoutes')
 const chatRoutes = require('./routes/chatRoutes')
-const verifyqr = require('./routes/verify.qr.routes')
 
-// Background controllers
+const announcemnet = require('./routes/announcement')
 require('./controllers/reminderController')
-require('./controllers/movieScheduler')
+require("./controllers/movieScheduler")
+const verifyqr = require('./routes/verify.qr.routes')
 
 // =========================
 // ⚙️ App Configuration
@@ -104,6 +104,9 @@ app.use('/api/rewards', rewardRoutes)
 app.use('/api/user', userRoutes)
 app.use('/api/chat', chatRoutes)
 app.use('/api/verify-qr', verifyqr)
+
+app.use("/api/notification", announcemnet)
+
 
 // =========================
 // 🗄️ Database + Server Start

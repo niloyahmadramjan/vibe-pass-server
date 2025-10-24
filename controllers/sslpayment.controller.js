@@ -145,7 +145,7 @@ const paymentSuccess = async (req, res) => {
       }
 
       return res.redirect(
-        `${process.env.REDIRECT_CLIENTS}/payment/status?status=success&paymentId=${updatedPayment?._id}`
+        `${process.env.REDIRECT_CLIENTS}/payment/status?status=success&paymentId=${bookingId}`
       )
 
       // Send confirmation email

@@ -20,9 +20,9 @@ cron.schedule("0 0 * * *", async () => {
                 { _id: { $in: ids } },
                 { $set: { category: "popular" } }
             );
-            console.log(` ${expiredMovies.length} upcoming movies moved to popular.`);
+            // console.log(` ${expiredMovies.length} upcoming movies moved to popular.`);
         } else {
-            console.log(" No expired upcoming movies found.");
+            // console.log(" No expired upcoming movies found.");
         }
     } catch (err) {
         console.error(" Error updating upcoming movies:", err.message);
