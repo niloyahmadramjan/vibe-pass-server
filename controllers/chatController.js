@@ -28,9 +28,11 @@ const getAllUsers = async (req, res) => {
       if (msg.senderId === SPECIFIC_ADMIN_ID) {
         userId = msg.receiverId
         userName = msg.receiverName
+      
       } else if (msg.receiverId === SPECIFIC_ADMIN_ID) {
         userId = msg.senderId
         userName = msg.senderName
+        senderImage = msg.senderImage
       } else return
 
       if (!userId || userId === SPECIFIC_ADMIN_ID) return
@@ -42,6 +44,7 @@ const getAllUsers = async (req, res) => {
         usersMap.set(userId, {
           _id: userId,
           name: userName || `User-${userId.substring(0, 8)}`,
+          senderImage: msg.senderImage,
           lastMessage: msg.createdAt,
           lastMessageText: msg.text,
           unreadCount:

@@ -8,6 +8,7 @@ const messageSchema = new mongoose.Schema(
         senderRole: { type: String, enum: ['user', 'admin'], required: true },
         receiverId: { type: String, required: true },
         receiverName: { type: String },
+        senderImage: { type: String },
         text: { type: String, required: true },
         read: { type: Boolean, default: false }
     },
