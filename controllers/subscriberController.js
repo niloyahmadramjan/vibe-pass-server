@@ -5,7 +5,7 @@ const Subscriber = require("../models/Subscriber");
 const subscribe = async (req, res) => {
     try {
         const { email } = req.body;
-
+        console.log(req.body)
         // Validate email
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             return res.status(400).json({
