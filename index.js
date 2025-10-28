@@ -105,7 +105,7 @@ app.use('/api/user', userRoutes)
 app.use('/api/chat', chatRoutes)
 app.use('/api/verify-qr', verifyqr)
 
-app.use("/api/notification", announcemnet)
+app.use("/api/announcemnet", announcemnet)
 
 
 // =========================

@@ -170,7 +170,7 @@ const updateSubscriber = async (req, res) => {
   }
 };
 
-// DELETE /api/subscribe/:id - Delete subscriber
+// ✅ DELETE /api/subscribe/:id - Delete subscriber
 const deleteSubscriber = async (req, res) => {
   try {
     const { id } = req.params;
@@ -197,7 +197,7 @@ const deleteSubscriber = async (req, res) => {
   }
 };
 
-// GET /api/subscribe/stats - Get subscription statistics
+// ✅ GET /api/subscribe/stats - Get subscription statistics
 const getSubscriptionStats = async (req, res) => {
   try {
     const totalSubscribers = await subscriber.countDocuments();
