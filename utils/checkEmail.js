@@ -1,11 +1,5 @@
 const https = require("https");
 
-/**
- * Smart email validator:
- * - Auto-accepts Gmail/Yahoo/Outlook/Protonmail
- * - Uses RapidAPI for custom domains
- * - Falls back to regex
- */
 const checkEmail = (email) => {
   return new Promise((resolve) => {
     if (!email) return resolve(false);

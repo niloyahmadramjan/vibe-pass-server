@@ -34,52 +34,119 @@ const subscribe = async (req, res) => {
       });
     }
 
-    // 4️⃣ Get IP
-    const ip =
-      req.headers["x-forwarded-for"]?.split(",")[0] ||
-      req.socket.remoteAddress ||
-      "";
+    // 4️⃣ Get User's Real IP (Fixed)
+    const getClientIP = (req) => {
+      const headers = [
+        'x-client-ip',           // Custom header
+        'x-forwarded-for',       // Load balancers, proxies
+        'cf-connecting-ip',      // Cloudflare
+        'fastly-client-ip',      // Fastly
+        'x-real-ip',            // Nginx
+        'x-cluster-client-ip',  // Rackspace LB, Riverbed Stingray
+        'x-forwarded',          // Squid
+        'forwarded-for',        // Standard header
+        'forwarded'             // Standard header
+      ];
 
-    // 5️⃣ Get IP info
-  let ipInfo = {};
-try {
-  const token = process.env.IPINFOTOKEN;
-  const { data } = await axios.get(`https://ipinfo.io/json?token=${token}`);
-  ipInfo = data;
-} catch (err) {
-  console.warn("IPInfo API fetch failed:", err.message);
-}
+      // Check headers in order
+      for (const header of headers) {
+        const value = req.headers[header];
+        if (value) {
+          if (header === 'x-forwarded-for' || header === 'forwarded-for') {
+            return value.split(',')[0].trim();
+          }
+          return value;
+        }
+      }
 
-// Split latitude & longitude from loc field ("lat,lon")
-let latitude = null;
-let longitude = null;
-if (ipInfo.loc) {
-  const [lat, lon] = ipInfo.loc.split(",");
-  latitude = lat;
-  longitude = lon;
-}
+      // Fallback to connection info
+      return (
+        req.connection.remoteAddress ||
+        req.socket.remoteAddress ||
+        req.connection.socket?.remoteAddress ||
+        'Unknown'
+      ).replace('::ffff:', '');
+    };
 
-// Save subscriber data
-const newSubscriber = new Subscriber({
-  email,
-  ip: ipInfo.ip || ip,
-  city: ipInfo.city,
-  region: ipInfo.region,
-  country: ipInfo.country,       // ipinfo.io uses "country" (e.g., "MY")
-  postal: ipInfo.postal,
-  latitude,
-  longitude,
-  timezone: ipInfo.timezone,
-  org: ipInfo.org,
-  subscribedAt: new Date(),
-});
+    const ip = getClientIP(req);
+    console.log('🔍 Detected User IP:', ip);
+
+    // 5️⃣ Get IP info for USER'S IP (Fixed)
+    let ipInfo = {};
+    try {
+      const token = process.env.IPINFOTOKEN;
+      
+      if (ip && ip !== 'Unknown' && ip !== '127.0.0.1' && !ip.startsWith('::')) {
+        // Get location for user's actual IP
+        const { data } = await axios.get(`https://ipinfo.io/${ip}?token=${token}`);
+        ipInfo = data;
+        console.log('📍 User Location from IP:', {
+          ip: data.ip,
+          city: data.city,
+          region: data.region,
+          country: data.country,
+          org: data.org
+        });
+      } else {
+        // Fallback: Get location from request origin
+        const { data } = await axios.get(`https://ipinfo.io/json?token=${token}`);
+        ipInfo = data;
+        console.log('📍 Fallback Location (Request Origin):', {
+          ip: data.ip,
+          city: data.city,
+          region: data.region,
+          country: data.country
+        });
+      }
+    } catch (err) {
+      console.warn("IPInfo API fetch failed:", err.message);
+      ipInfo = { ip: ip };
+    }
+
+    // Split latitude & longitude from loc field ("lat,lon")
+    let latitude = null;
+    let longitude = null;
+    if (ipInfo.loc) {
+      const [lat, lon] = ipInfo.loc.split(",");
+      latitude = parseFloat(lat);
+      longitude = parseFloat(lon);
+    }
+
+    // Save subscriber data
+    const newSubscriber = new Subscriber({
+      email,
+      ip: ipInfo.ip || ip,
+      city: ipInfo.city || 'Unknown',
+      region: ipInfo.region || 'Unknown',
+      country: ipInfo.country || 'Unknown',       
+      postal: ipInfo.postal || '',
+      latitude,
+      longitude,
+      timezone: ipInfo.timezone || 'Unknown',
+      org: ipInfo.org || 'Unknown ISP',
+      subscribedAt: new Date(),
+    });
 
     await newSubscriber.save();
+
+    console.log('✅ Subscriber saved with location:', {
+      email: email,
+      ip: ipInfo.ip || ip,
+      location: `${ipInfo.city || 'Unknown'}, ${ipInfo.region || 'Unknown'}, ${ipInfo.country || 'Unknown'}`
+    });
 
     return res.status(200).json({
       success: true,
       message: "🎉 Subscribed successfully!",
-      data: newSubscriber,
+      data: {
+        email: newSubscriber.email,
+        location: {
+          city: newSubscriber.city,
+          region: newSubscriber.region,
+          country: newSubscriber.country
+        },
+        subscribedAt: newSubscriber.subscribedAt
+      },
     });
   } catch (error) {
     console.error("Subscription error:", error);
