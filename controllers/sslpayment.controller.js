@@ -1,8 +1,9 @@
 const axios = require('axios')
-const { v4: uuidv4 } = require('uuid')
+const uuidv4 = require('uuid').v4
 const Payment = require('../models/Payment')
 const Booking = require('../models/Booking')
 const { updateBookingSignature } = require('../utils/updateBookingSignature')
+const nodemailer = require('nodemailer')
 
 // Initiate SSLCommerz Payment
 const initiatePayment = async (req, res) => {
@@ -120,21 +121,15 @@ const paymentSuccess = async (req, res) => {
         { new: true }
       )
 
-      // update qr code unique string
-      // After payment confirmation and booking update:
-      const qrSignature = await updateBookingSignature(bookingId, transactionId)
-
-      // You can include this in the email or response if needed
-      // console.log('QR Signature generated:', qrSignature)
-
-      // ✅ Update booking status to confirmed and mark as paid
+      // ✅ Update booking status to confirmed and mark as paid WITH TRANSACTION ID
       const updatedBooking = await Booking.findByIdAndUpdate(
         bookingId,
         {
           $set: {
             status: 'confirmed',
             paymentStatus: 'paid',
-            paymentId: transactionId,
+            paymentId: transactionId, // ✅ This saves the transaction ID to booking
+            transactionId: transactionId, // ✅ Added this line to ensure transactionId is saved
           },
         },
         { new: true }
@@ -144,11 +139,16 @@ const paymentSuccess = async (req, res) => {
         return res.status(404).json({ message: 'Booking not found' })
       }
 
-      return res.redirect(
-        `${process.env.REDIRECT_CLIENTS}/payment/status?status=success&paymentId=${bookingId}`
-      )
+      // ✅ Update QR code unique string after payment confirmation
+      const qrSignature = await updateBookingSignature(bookingId, transactionId)
 
-      // Send confirmation email
+      // ✅ Get booking details for email
+      const bookingDetails = await Booking.findById(bookingId)
+      if (!bookingDetails) {
+        console.error('Booking details not found for email')
+      }
+
+      // ✅ Send confirmation email
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -156,6 +156,7 @@ const paymentSuccess = async (req, res) => {
           pass: process.env.EMAIL_PASS,
         },
       })
+
       const htmlTemplate = `
           <html>
               <head>
@@ -261,25 +262,22 @@ const paymentSuccess = async (req, res) => {
                   <div class="section">
                     <h2>Show Information</h2>
                     <table>
-                      <tr><th>Movie</th><td>${sessionTitle}</td></tr>
-                      <tr><th>Theater</th><td>${theaterName}</td></tr>
-                      <tr><th>Screen</th><td>${screen || 'N/A'}</td></tr>
-                      
-                      <tr><th>Time</th><td>${showTime}</td></tr>
-                      <tr><th>Seats</th><td>${selectedSeats.join(
-                        ', '
-                      )}</td></tr>
+                      <tr><th>Movie</th><td>${bookingDetails?.movieTitle || 'N/A'}</td></tr>
+                      <tr><th>Theater</th><td>${bookingDetails?.theaterName || 'N/A'}</td></tr>
+                      <tr><th>Screen</th><td>${bookingDetails?.screen || 'N/A'}</td></tr>
+                      <tr><th>Time</th><td>${bookingDetails?.showTime || 'N/A'}</td></tr>
+                      <tr><th>Seats</th><td>${bookingDetails?.selectedSeats?.join(', ') || 'N/A'}</td></tr>
                     </table>
                   </div>
       
                   <div class="section">
                     <h2>Booking Information</h2>
                     <table>
-                      <tr><th>Name</th><td>${userName || 'N/A'}</td></tr>
-                      <tr><th>Email</th><td>${userEmail}</td></tr>
+                      <tr><th>Name</th><td>${bookingDetails?.userName || 'N/A'}</td></tr>
+                      <tr><th>Email</th><td>${bookingDetails?.userEmail || 'N/A'}</td></tr>
                       <tr><th>Transaction ID</th><td>${transactionId}</td></tr>
                       <tr><th>Status</th><td>Paid</td></tr>
-                      <tr><th>Total Paid</th><td style="font-weight:bold; color:#CC2027;">৳${amount}</td></tr>
+                      <tr><th>Total Paid</th><td style="font-weight:bold; color:#CC2027;">৳${paymentInfo.amount || 'N/A'}</td></tr>
                     </table>
                   </div>
                   <div class="footer">
@@ -290,12 +288,20 @@ const paymentSuccess = async (req, res) => {
               </body>
             </html>`
 
-      await transporter.sendMail({
-        from: `"VibePass" <${process.env.EMAIL_USER}>`,
-        to: userEmail,
-        subject: 'Payment Successful - VibePass',
-        html: htmlTemplate,
-      })
+      try {
+        await transporter.sendMail({
+          from: `"VibePass" <${process.env.EMAIL_USER}>`,
+          to: bookingDetails?.userEmail || paymentInfo.value_b,
+          subject: 'Payment Successful - VibePass',
+          html: htmlTemplate,
+        })
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError)
+      }
+
+      return res.redirect(
+        `${process.env.REDIRECT_CLIENTS}/payment/status?status=success&paymentId=${bookingId}`
+      )
     } else {
       console.warn('Invalid payment status:', paymentInfo.status)
       return res.redirect(
@@ -317,6 +323,7 @@ const paymentFail = async (req, res) => {
 
     // ✅ Get bookingId from paymentInfo (value_a)
     const bookingId = paymentInfo.value_a
+    const transactionId = paymentInfo.tran_id
 
     const updatedPayment = await Payment.findOneAndUpdate(
       { transactionId: paymentInfo.tran_id },
@@ -329,11 +336,12 @@ const paymentFail = async (req, res) => {
       { new: true }
     )
 
-    // ✅ Update booking status to failed payment
+    // ✅ Update booking status to failed payment WITH TRANSACTION ID
     if (bookingId) {
       await Booking.findByIdAndUpdate(bookingId, {
         $set: {
           paymentStatus: 'failed',
+          transactionId: transactionId, // ✅ Save transaction ID even for failed payments
         },
       })
     }
@@ -356,6 +364,7 @@ const paymentCancel = async (req, res) => {
 
     // ✅ Get bookingId from paymentInfo (value_a)
     const bookingId = paymentInfo.value_a
+    const transactionId = paymentInfo.tran_id
 
     const updatedPayment = await Payment.findOneAndUpdate(
       { transactionId: paymentInfo.tran_id },
@@ -368,12 +377,13 @@ const paymentCancel = async (req, res) => {
       { new: true }
     )
 
-    // ✅ Update booking status to cancelled
+    // ✅ Update booking status to cancelled WITH TRANSACTION ID
     if (bookingId) {
       await Booking.findByIdAndUpdate(bookingId, {
         $set: {
           paymentStatus: 'cancelled',
           status: 'cancelled',
+          transactionId: transactionId, // ✅ Save transaction ID for cancelled payments
         },
       })
     }
