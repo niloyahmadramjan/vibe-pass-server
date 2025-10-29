@@ -181,15 +181,13 @@ const getMovieVideos = async (req, res) => {
 // ✅ Get all movies with pagination and search
 const getAllMoviesWithPagination = async (req, res) => {
     try {
-        console.log("🔍 Fetching movies with pagination...");
-        console.log("Query parameters:", req.query);
+      
 
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const search = req.query.search || '';
         const skip = (page - 1) * limit;
 
-        console.log(`📄 Page: ${page}, Limit: ${limit}, Search: "${search}"`);
 
         // Build search query
         let searchQuery = {};
@@ -204,7 +202,6 @@ const getAllMoviesWithPagination = async (req, res) => {
             };
         }
 
-        console.log("🔎 Search Query:", JSON.stringify(searchQuery));
 
         // Check if Movie model exists
         if (!Movie) {
