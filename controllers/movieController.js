@@ -60,42 +60,6 @@ const addMovie = async (req, res) => {
 
 
 
-// ✅ Admin: Update existing movie
-const updateMovie = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const updated = await Movie.findOneAndUpdate({ id: id }, req.body, { new: true });
-
-        if (!updated) {
-            return res.status(404).json({ message: "Movie not found" });
-        }
-
-        res.status(200).json({ success: true, movie: updated });
-    } catch (error) {
-        console.error("Error updating movie:", error);
-        res.status(500).json({ message: "Failed to update movie" });
-    }
-};
-
-
-
-// ✅ Admin: Delete movie
-const deleteMovie = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const deleted = await Movie.findOneAndDelete({ id: id });
-
-        if (!deleted) {
-            return res.status(404).json({ message: "Movie not found" });
-        }
-
-        res.status(200).json({ success: true, message: "Movie deleted successfully" });
-    } catch (error) {
-        console.error("Error deleting movie:", error);
-        res.status(500).json({ message: "Failed to delete movie" });
-    }
-};
-
 
 
 
@@ -214,6 +178,132 @@ const getMovieVideos = async (req, res) => {
     }
 };
 
+// ✅ Get all movies with pagination and search
+const getAllMoviesWithPagination = async (req, res) => {
+    try {
+        console.log("🔍 Fetching movies with pagination...");
+        console.log("Query parameters:", req.query);
 
-module.exports = { getAllMovies, getMoviesByCategory, getMovieById, importMovies, importMovies, getMovieVideos, addMovie, updateMovie, deleteMovie };
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const search = req.query.search || '';
+        const skip = (page - 1) * limit;
+
+        console.log(`📄 Page: ${page}, Limit: ${limit}, Search: "${search}"`);
+
+        // Build search query
+        let searchQuery = {};
+        if (search) {
+            searchQuery = {
+                $or: [
+                    { title: { $regex: search, $options: 'i' } },
+                    { original_title: { $regex: search, $options: 'i' } },
+                    { overview: { $regex: search, $options: 'i' } },
+                    { category: { $regex: search, $options: 'i' } }
+                ]
+            };
+        }
+
+        console.log("🔎 Search Query:", JSON.stringify(searchQuery));
+
+        // Check if Movie model exists
+        if (!Movie) {
+            console.error("❌ Movie model is not defined");
+            return res.status(500).json({
+                success: false,
+                message: "Movie model not found"
+            });
+        }
+
+        const movies = await Movie.find(searchQuery)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        console.log(`✅ Found ${movies.length} movies`);
+
+        const total = await Movie.countDocuments(searchQuery);
+
+        res.status(200).json({
+            success: true,
+            movies,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit)
+        });
+    } catch (error) {
+        console.error("❌ Error fetching movies:", error);
+        console.error("Error stack:", error.stack);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch movies",
+            error: error.message
+        });
+    }
+};
+
+
+// ✅ Admin: Update movie by MongoDB _id
+const updateMovie = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updated = await Movie.findByIdAndUpdate(
+            id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+
+        if (!updated) {
+            return res.status(404).json({
+                success: false,
+                message: "Movie not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Movie updated successfully",
+            movie: updated
+        });
+    } catch (error) {
+        console.error("Error updating movie:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to update movie",
+            error: error.message
+        });
+    }
+};
+
+
+// ✅ Admin: Delete movie by MongoDB _id
+const deleteMovie = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deleted = await Movie.findByIdAndDelete(id);
+
+        if (!deleted) {
+            return res.status(404).json({
+                success: false,
+                message: "Movie not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Movie deleted successfully"
+        });
+    } catch (error) {
+        console.error("Error deleting movie:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to delete movie",
+            error: error.message
+        });
+    }
+};
+
+
+
+module.exports = { getAllMovies, getMoviesByCategory, getMovieById, importMovies, importMovies, getMovieVideos, addMovie, deleteMovie, updateMovie, getAllMoviesWithPagination };
 
