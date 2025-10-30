@@ -334,12 +334,6 @@ const getPaymentsByEmail = async (req, res) => {
 
     const payments = await Payment.find({ userEmail }).sort({ createdAt: -1 })
 
-    if (!payments.length) {
-      return res
-        .status(404)
-        .json({ message: 'No payments found for this email' })
-    }
-
     res.json(payments)
   } catch (err) {
     console.error('❌ Get payments by email error:', err)
